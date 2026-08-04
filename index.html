@@ -1326,7 +1326,6 @@
           }
         }
       } else {
-        // Fallback / legacy yearly repeat support
         if (r.month === date.getMonth()+1 && r.day === date.getDate()) {
           isMatch = true;
         }
@@ -1339,7 +1338,6 @@
       }
     });
 
-    // Sort chronologically by time
     list.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
     return list;
   }
@@ -1496,6 +1494,7 @@
       let repeatLabel = '';
       if (n.repeat === 'daily') repeatLabel = '<div class="event-recurring">Repeats daily</div>';
       else if (n.repeat === 'weekly') repeatLabel = '<div class="event-recurring">Repeats weekly</div>';
+      else if (n.repeat === 'fortnightly') repeatLabel = '<div class="event-recurring">Repeats fortnightly</div>';
       else if (n.repeat === 'yearly' || n.recurring) repeatLabel = '<div class="event-recurring">Repeats every year</div>';
 
       li.innerHTML = `
@@ -1907,23 +1906,34 @@
     reader.readAsDataURL(file);
   });
 
+  /* PWA INSTALL BUTTON & STANDALONE CHECK FIX */
+  const installBtn = document.getElementById('installBtn');
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-  if (isStandalone) document.getElementById('installBtn').style.display = 'none';
+
+  if (isStandalone) {
+    installBtn.style.display = 'none';
+  }
 
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     deferredPrompt = e;
-    if (!isStandalone) document.getElementById('installBtn').style.display = 'block';
+    if (!isStandalone) {
+      installBtn.style.display = 'block';
+    }
   });
+
   window.addEventListener('appinstalled', () => {
-    document.getElementById('installBtn').style.display = 'none';
+    installBtn.style.display = 'none';
     deferredPrompt = null;
   });
-  document.getElementById('installBtn').addEventListener('click', async () => {
+
+  installBtn.addEventListener('click', async () => {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') document.getElementById('installBtn').style.display = 'none';
+    if (outcome === 'accepted') {
+      installBtn.style.display = 'none';
+    }
     deferredPrompt = null;
   });
 
