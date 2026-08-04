@@ -1408,7 +1408,6 @@
     document.getElementById('customCatName').placeholder = t('catNamePlaceholder');
     document.getElementById('saveCustomCatBtn').textContent = t('saveBtn');
 
-    // Update select options text
     document.querySelector('option[value="#fdcb6e"]').textContent = t('catDefault');
     document.querySelector('option[value="#6c5ce7"]').textContent = t('catImportant');
     document.querySelector('option[value="#ff7675"]').textContent = t('catUrgent');
@@ -1425,7 +1424,6 @@
     document.querySelector('option[value="fortnightly"]').textContent = t('repFortnightly');
     document.querySelector('option[value="yearly"]').textContent = t('repYearly');
 
-    // Update data-i18n elements
     document.querySelectorAll('[data-i18n]').forEach(el => {
       const keyName = el.getAttribute('data-i18n');
       if (i18n[settings.language][keyName]) {
@@ -1624,6 +1622,53 @@
 
     list.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
     return list;
+  }
+
+  function createDayCell(date, isOtherMonth){
+    const cell = document.createElement('div');
+    const k = key(date);
+    const todayStr = key(new Date());
+    const selStr = key(selected);
+
+    cell.className = 'day';
+    if (isOtherMonth) cell.classList.add('other-month');
+    if (k === todayStr) cell.classList.add('today');
+    if (k === selStr) cell.classList.add('selected');
+
+    if (marks[k]) {
+      cell.classList.add('marked');
+      if (typeof marks[k] === 'string') {
+        cell.style.setProperty('--mark-color', marks[k]);
+      }
+    }
+
+    if (settings.autoMarkPast && k < todayStr && !marks[k]) {
+      cell.classList.add('marked');
+      cell.style.setProperty('--mark-color', 'var(--muted)');
+    }
+
+    const dayNotes = getNotesForDate(date);
+    let emojiDisplay = '';
+    const firstEmojiNote = dayNotes.find(n => n.emoji);
+    if (firstEmojiNote) {
+      emojiDisplay = firstEmojiNote.emoji;
+    }
+
+    cell.innerHTML = `
+      <div class="day-num">${date.getDate()}</div>
+      ${emojiDisplay ? `<div class="day-emoji">${emojiDisplay}</div>` : ''}
+      ${dayNotes.length > 0 ? `<div class="day-badge">${dayNotes.length}</div>` : ''}
+    `;
+
+    cell.addEventListener('click', () => {
+      selected = new Date(date);
+      if (date.getMonth() !== current.getMonth()) {
+        current = new Date(date.getFullYear(), date.getMonth(), 1);
+      }
+      render();
+    });
+
+    return cell;
   }
 
   /* HIGH-PRECISION SMOOTH CLOCK LOOP */
