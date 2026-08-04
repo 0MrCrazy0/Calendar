@@ -1009,10 +1009,11 @@
             <option value="__NEW__">⚙️ Manage / Create Custom Category...</option>
           </select>
           <select id="noteRepeat" title="Repeat Frequency">
-            <option value="none">Don't repeat</option>
-            <option value="daily">Repeat daily</option>
-            <option value="weekly">Repeat weekly</option>
-            <option value="yearly">Repeat yearly</option>
+          <option value="none">Don't repeat</option>
+          <option value="daily">Repeat daily</option>
+          <option value="weekly">Repeat weekly</option>
+          <option value="fortnightly">Repeat fortnightly</option>
+          <option value="yearly">Repeat yearly</option>
           </select>
         </div>
 
@@ -1313,13 +1314,14 @@
         if (targetTime >= startDate) {
           isMatch = true;
         }
-      } else if (r.repeat === 'weekly') {
+      } else if (r.repeat === 'weekly' || r.repeat === 'fortnightly') {
         const startDate = new Date(r.startDate || r.date || targetTime);
         startDate.setHours(0, 0, 0, 0);
         if (targetTime >= startDate) {
           const diffTime = targetTime - startDate;
           const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-          if (diffDays % 7 === 0) {
+          const intervalDays = r.repeat === 'fortnightly' ? 14 : 7;
+          if (diffDays % intervalDays === 0) {
             isMatch = true;
           }
         }
