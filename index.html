@@ -251,6 +251,7 @@
     margin: 0 10px 8px;
     border-radius: 8px;
     overflow: hidden;
+    touch-action: pan-y;
   }
 
   .day {
@@ -409,7 +410,7 @@
     display: block;
   }
 
-  .note-form input[type="text"] {
+  .note-form input[type="text"], .note-form input[type="time"] {
     width: 100%;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.12);
@@ -419,6 +420,11 @@
     font-size: 13px;
     outline: none;
     margin-bottom: 6px;
+  }
+
+  .note-form input[type="time"] {
+    width: 100%;
+    color-scheme: dark;
   }
 
   .note-form input:focus {
@@ -510,7 +516,7 @@
   .event-item {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     padding: 8px 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     font-size: 13px;
@@ -521,8 +527,27 @@
     border-bottom: none;
   }
 
+  .event-item.completed .event-text span {
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
+
+  .event-item input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: var(--accent);
+    width: 16px;
+    height: 16px;
+  }
+
   .event-text {
     flex: 1;
+  }
+
+  .event-time {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-right: 4px;
   }
 
   .event-emoji {
@@ -821,7 +846,7 @@
     color: var(--accent-text);
   }
 
-  .upload-month-btn {
+  .upload-month-btn, .action-setting-btn {
     width: 100%;
     padding: 8px;
     margin-bottom: 8px;
@@ -831,10 +856,17 @@
     color: var(--text);
     font-size: 13px;
     cursor: pointer;
+    text-align: center;
   }
 
-  .upload-month-btn:hover {
+  .upload-month-btn:hover, .action-setting-btn:hover {
     background: rgba(255, 255, 255, 0.07);
+  }
+
+  .data-btns {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
   }
 
   .install-btn {
@@ -960,6 +992,7 @@
         </div>
 
         <input type="text" id="noteText" placeholder="Add note or event…">
+        <input type="time" id="noteTime" title="Optional Event Time">
 
         <div class="note-options">
           <input type="text" id="noteEmoji" placeholder="Emoji" maxlength="8" title="Paste one or multiple emojis">
@@ -1010,12 +1043,20 @@
         </label>
       </div>
       <div class="toggle-row">
-        <label for="autoMarkToggle">Auto Mark Today</label>
+        <label for="autoMarkPastToggle">Auto Mark Past Days</label>
         <label class="switch">
-          <input type="checkbox" id="autoMarkToggle">
+          <input type="checkbox" id="autoMarkPastToggle">
           <span class="slider"></span>
         </label>
       </div>
+
+      <h3>Data Safety & Export</h3>
+      <div class="data-btns">
+        <button class="action-setting-btn" id="exportJsonBtn">📥 Backup (JSON)</button>
+        <button class="action-setting-btn" id="importJsonBtn">📤 Restore (JSON)</button>
+      </div>
+      <button class="action-setting-btn" id="exportIcsBtn">📅 Export to .ics (iCal)</button>
+      <input type="file" id="importJsonInput" accept=".json">
 
       <h3>Custom Colors</h3>
       <div class="color-pickers">
@@ -1104,7 +1145,7 @@
   if (!settings.randomInterval) settings.randomInterval = 30;
   if (!settings.scale) settings.scale = 100;
   if (settings.use24Hour === undefined) settings.use24Hour = false;
-  if (settings.autoMarkToday === undefined) settings.autoMarkToday = false;
+  if (settings.autoMarkPast === undefined) settings.autoMarkPast = false;
 
   const presets = [
     {name:'Purple',accent:'#6c5ce7',today:'#00cec9',mark:'#ff7675',event:'#fdcb6e',border:'#2a2a35',dayText:'#e8e8ed',dayBg:'#16161e',muted:'#8b8b9a'},
@@ -1262,6 +1303,9 @@
         }
       }
     });
+
+    // Sort chronologically by time
+    list.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
     return list;
   }
 
@@ -1321,12 +1365,19 @@
     if (other) cell.classList.add('other-month');
 
     const today = new Date();
-    const isToday = date.toDateString() === today.toDateString();
+    today.setHours(0, 0, 0, 0);
+
+    const cellDate = new Date(date);
+    cellDate.setHours(0, 0, 0, 0);
+
+    const isToday = cellDate.getTime() === today.getTime();
+    const isPast = cellDate < today;
+
     if (isToday) cell.classList.add('today');
     if (date.toDateString() === selected.toDateString()) cell.classList.add('selected');
 
     const k = key(date);
-    if (marks[k] || (settings.autoMarkToday && isToday)) {
+    if (marks[k] || (settings.autoMarkPast && isPast)) {
       cell.classList.add('marked');
       if (typeof marks[k] === 'string') {
         cell.style.setProperty('--mark-color', marks[k]);
@@ -1366,6 +1417,16 @@
     return `<span style="${css.join(' ')}">${text}</span>`;
   }
 
+  function formatDisplayTime(timeStr) {
+    if (!timeStr) return '';
+    if (settings.use24Hour) return timeStr;
+    let [h, m] = timeStr.split(':');
+    let hNum = parseInt(h, 10);
+    let ampm = hNum >= 12 ? 'PM' : 'AM';
+    hNum = hNum % 12 || 12;
+    return `${hNum}:${m} ${ampm}`;
+  }
+
   function updatePanel(){
     const k = key(selected);
     document.getElementById('panelDate').textContent = selected.toLocaleDateString('en-US', {
@@ -1392,18 +1453,34 @@
 
     dayNotes.forEach(n => {
       const li = document.createElement('li');
-      li.className = 'event-item';
+      li.className = `event-item ${n.completed ? 'completed' : ''}`;
       
       const formattedText = formatTextSpan(n.text, n.styles);
+      const formattedTime = n.time ? `<span class="event-time">${formatDisplayTime(n.time)}</span>` : '';
 
       li.innerHTML = `
+        <input type="checkbox" ${n.completed ? 'checked' : ''} data-id="${n.id}" title="Toggle Completed">
         <div class="event-text">
           ${n.emoji ? `<span class="event-emoji">${n.emoji}</span>` : ''}
+          ${formattedTime}
           <span style="border-left: 3px solid ${n.categoryColor || 'var(--event)'}; padding-left: 6px;">${formattedText}</span>
           ${n.recurring ? '<div class="event-recurring">Repeats every year</div>' : ''}
         </div>
         <button class="delete-event" data-id="${n.id}">×</button>`;
       list.appendChild(li);
+    });
+
+    list.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+      chk.addEventListener('change', (e) => {
+        const id = chk.dataset.id;
+        const targetList = notes[k] || [];
+        const note = targetList.find(n => n.id === id) || recurring.find(r => r.id === id);
+        if (note) {
+          note.completed = e.target.checked;
+          save();
+          render();
+        }
+      });
     });
 
     list.querySelectorAll('.delete-event').forEach(btn => {
@@ -1462,6 +1539,23 @@
       resultsContainer.appendChild(item);
     });
   }
+
+  /* SWIPE GESTURES FOR MONTH NAVIGATION */
+  let touchStartX = 0;
+  const gridEl = document.getElementById('daysGrid');
+
+  gridEl.addEventListener('touchstart', e => {
+    touchStartX = e.changedTouches[0].screenX;
+  }, {passive: true});
+
+  gridEl.addEventListener('touchend', e => {
+    let touchEndX = e.changedTouches[0].screenX;
+    if (touchStartX - touchEndX > 50) {
+      document.getElementById('nextMonth').click();
+    } else if (touchEndX - touchStartX > 50) {
+      document.getElementById('prevMonth').click();
+    }
+  }, {passive: true});
 
   /* TOGGLE NOTE CREATION FORM */
   const toggleFormBtn = document.getElementById('toggleFormBtn');
@@ -1568,6 +1662,7 @@
   document.getElementById('addNoteBtn').addEventListener('click', () => {
     const text = document.getElementById('noteText').value.trim();
     if (!text) return;
+    const time = document.getElementById('noteTime').value;
     const emoji = document.getElementById('noteEmoji').value.trim();
     let categoryColor = document.getElementById('eventCategory').value;
     if (categoryColor === '__NEW__') categoryColor = '#fdcb6e';
@@ -1578,17 +1673,18 @@
 
     if (isRecurring) {
       recurring.push({
-        id, text, emoji, categoryColor, styles,
+        id, text, time, emoji, categoryColor, styles, completed: false,
         month: selected.getMonth()+1,
         day: selected.getDate()
       });
     } else {
       const k = key(selected);
       if (!notes[k]) notes[k] = [];
-      notes[k].push({ id, text, emoji, categoryColor, styles });
+      notes[k].push({ id, text, time, emoji, categoryColor, styles, completed: false });
     }
 
     document.getElementById('noteText').value = '';
+    document.getElementById('noteTime').value = '';
     document.getElementById('noteEmoji').value = '';
     document.getElementById('noteRecurring').checked = false;
 
@@ -1615,12 +1711,77 @@
     save();
   });
 
-  const autoMarkToggle = document.getElementById('autoMarkToggle');
-  autoMarkToggle.checked = settings.autoMarkToday;
-  autoMarkToggle.addEventListener('change', e => {
-    settings.autoMarkToday = e.target.checked;
+  const autoMarkPastToggle = document.getElementById('autoMarkPastToggle');
+  autoMarkPastToggle.checked = settings.autoMarkPast;
+  autoMarkPastToggle.addEventListener('change', e => {
+    settings.autoMarkPast = e.target.checked;
     save();
     render();
+  });
+
+  /* DATA BACKUP & RESTORE & ICAL EXPORT */
+  document.getElementById('exportJsonBtn').addEventListener('click', () => {
+    const data = { marks, notes, recurring, customCategories, theme, settings };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `calendar_backup_${key(new Date())}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('importJsonBtn').addEventListener('click', () => {
+    document.getElementById('importJsonInput').click();
+  });
+
+  document.getElementById('importJsonInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const imported = JSON.parse(reader.result);
+        if (imported.marks) marks = imported.marks;
+        if (imported.notes) notes = imported.notes;
+        if (imported.recurring) recurring = imported.recurring;
+        if (imported.customCategories) customCategories = imported.customCategories;
+        if (imported.theme) theme = imported.theme;
+        if (imported.settings) settings = imported.settings;
+        save();
+        applyTheme();
+        applyScale();
+        render();
+        alert('Data imported successfully!');
+      } catch (err) {
+        alert('Invalid JSON backup file.');
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  document.getElementById('exportIcsBtn').addEventListener('click', () => {
+    let icsContent = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Desktop Calendar V12//EN\r\n";
+    
+    Object.keys(notes).forEach(dateStr => {
+      notes[dateStr].forEach(n => {
+        let cleanDate = dateStr.replace(/-/g, '');
+        icsContent += "BEGIN:VEVENT\r\n";
+        icsContent += `SUMMARY:${n.emoji ? n.emoji + ' ' : ''}${n.text}\r\n`;
+        icsContent += `DTSTART;VALUE=DATE:${cleanDate}\r\n`;
+        icsContent += "END:VEVENT\r\n";
+      });
+    });
+
+    icsContent += "END:VCALENDAR";
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `calendar_events.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
   });
 
   const themeRow = document.getElementById('themeRow');
