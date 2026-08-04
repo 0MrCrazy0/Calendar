@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calendar-v2';
+const CACHE_NAME = 'calendar-v3';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -13,8 +13,7 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // Network first for HTML and JS so theme changes appear immediately
-  if (event.request.url.includes('Calendar.html') || event.request.url.includes('.js')) {
+  if (event.request.url.includes('index.html') || event.request.url.includes('.js')) {
     event.respondWith(
       fetch(event.request)
         .then(response => {
