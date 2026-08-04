@@ -1137,6 +1137,7 @@
         <input type="range" id="intervalSlider" min="10" max="120" value="30">
       </div>
       <button class="upload-month-btn" id="uploadMonthBtn">📷 Upload Custom Photo</button>
+      <button class="upload-month-btn" id="removeCustomPhotoBtn" style="display:none; border-color:var(--mark); color:var(--mark);">🗑️ Remove Custom Photo</button>
       <input type="file" id="monthPhotoInput" accept="image/*">
 
       <button class="install-btn" id="installBtn">Install as App</button>
@@ -1897,11 +1898,27 @@
     document.getElementById('randomGroup').style.display = settings.photoMode === 'random' ? 'block' : 'none';
     document.getElementById('intervalSlider').value = settings.randomInterval || 30;
     document.getElementById('intervalVal').textContent = (settings.randomInterval || 30) + 's';
+    
+    // Fix #2: Show "Remove Custom Photo" button only when in 'custom' mode and a photo exists for the current month
+    const mk = monthKey(current);
+    const removePhotoBtn = document.getElementById('removeCustomPhotoBtn');
+    if (settings.photoMode === 'custom' && monthPhotos[mk]) {
+      removePhotoBtn.style.display = 'block';
+    } else {
+      removePhotoBtn.style.display = 'none';
+    }
   }
 
   document.querySelectorAll('.mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       settings.photoMode = btn.dataset.mode;
+      
+      // Fix #1: If switching away from 'custom', delete/clear out the uploaded custom photo for the active month
+      if (settings.photoMode !== 'custom') {
+        const mk = monthKey(current);
+        delete monthPhotos[mk];
+      }
+
       updatePhotoUI(); save(); loadMonthPhoto();
     });
   });
@@ -1915,6 +1932,7 @@
   document.getElementById('uploadMonthBtn').addEventListener('click', () => {
     document.getElementById('monthPhotoInput').click();
   });
+  
   document.getElementById('monthPhotoInput').addEventListener('change', e => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1927,6 +1945,14 @@
       updatePhotoUI(); save(); loadMonthPhoto();
     };
     reader.readAsDataURL(file);
+  });
+
+  // Fix #2 Handler: Remove the current month's custom photo and switch back to monthly view
+  document.getElementById('removeCustomPhotoBtn').addEventListener('click', () => {
+    const mk = monthKey(current);
+    delete monthPhotos[mk];
+    settings.photoMode = 'monthly';
+    updatePhotoUI(); save(); loadMonthPhoto();
   });
 
   /* PWA INSTALL BUTTON & STANDALONE CHECK FIX */
