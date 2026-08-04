@@ -1008,7 +1008,12 @@
             <option value="#74b9ff">🟦 Fitness / Blue</option>
             <option value="__NEW__">⚙️ Manage / Create Custom Category...</option>
           </select>
-          <label><input type="checkbox" id="noteRecurring"> Repeat yearly</label>
+          <select id="noteRepeat" title="Repeat Frequency">
+            <option value="none">Don't repeat</option>
+            <option value="daily">Repeat daily</option>
+            <option value="weekly">Repeat weekly</option>
+            <option value="yearly">Repeat yearly</option>
+          </select>
         </div>
 
         <!-- Custom Category Creator & Management Box -->
@@ -1296,8 +1301,36 @@
   function getNotesForDate(date){
     const k = key(date);
     const list = notes[k] ? [...notes[k]] : [];
+    const targetTime = new Date(date);
+    targetTime.setHours(0, 0, 0, 0);
+
     recurring.forEach(r => {
-      if (r.month === date.getMonth()+1 && r.day === date.getDate()) {
+      let isMatch = false;
+
+      if (r.repeat === 'daily') {
+        const startDate = new Date(r.startDate || r.date || targetTime);
+        startDate.setHours(0, 0, 0, 0);
+        if (targetTime >= startDate) {
+          isMatch = true;
+        }
+      } else if (r.repeat === 'weekly') {
+        const startDate = new Date(r.startDate || r.date || targetTime);
+        startDate.setHours(0, 0, 0, 0);
+        if (targetTime >= startDate) {
+          const diffTime = targetTime - startDate;
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+          if (diffDays % 7 === 0) {
+            isMatch = true;
+          }
+        }
+      } else {
+        // Fallback / legacy yearly repeat support
+        if (r.month === date.getMonth()+1 && r.day === date.getDate()) {
+          isMatch = true;
+        }
+      }
+
+      if (isMatch) {
         if (!list.find(n => n.id === r.id)) {
           list.push({ ...r, recurring: true });
         }
@@ -1457,6 +1490,11 @@
       
       const formattedText = formatTextSpan(n.text, n.styles);
       const formattedTime = n.time ? `<span class="event-time">${formatDisplayTime(n.time)}</span>` : '';
+      
+      let repeatLabel = '';
+      if (n.repeat === 'daily') repeatLabel = '<div class="event-recurring">Repeats daily</div>';
+      else if (n.repeat === 'weekly') repeatLabel = '<div class="event-recurring">Repeats weekly</div>';
+      else if (n.repeat === 'yearly' || n.recurring) repeatLabel = '<div class="event-recurring">Repeats every year</div>';
 
       li.innerHTML = `
         <input type="checkbox" ${n.completed ? 'checked' : ''} data-id="${n.id}" title="Toggle Completed">
@@ -1464,7 +1502,7 @@
           ${n.emoji ? `<span class="event-emoji">${n.emoji}</span>` : ''}
           ${formattedTime}
           <span style="border-left: 3px solid ${n.categoryColor || 'var(--event)'}; padding-left: 6px;">${formattedText}</span>
-          ${n.recurring ? '<div class="event-recurring">Repeats every year</div>' : ''}
+          ${repeatLabel}
         </div>
         <button class="delete-event" data-id="${n.id}">×</button>`;
       list.appendChild(li);
@@ -1515,8 +1553,11 @@
 
     recurring.forEach(r => {
       if (r.text.toLowerCase().includes(query) || (r.emoji && r.emoji.includes(query))) {
-        const matchDate = new Date(current.getFullYear(), r.month - 1, r.day);
-        matches.push({ date: matchDate, text: r.text + ' (Yearly)', emoji: r.emoji || '' });
+        let matchDate = new Date(current.getFullYear(), (r.month || 1) - 1, r.day || 1);
+        if (r.startDate) {
+          matchDate = new Date(r.startDate);
+        }
+        matches.push({ date: matchDate, text: r.text + ` (${r.repeat || 'recurring'})`, emoji: r.emoji || '' });
       }
     });
 
@@ -1667,13 +1708,17 @@
     let categoryColor = document.getElementById('eventCategory').value;
     if (categoryColor === '__NEW__') categoryColor = '#fdcb6e';
 
-    const isRecurring = document.getElementById('noteRecurring').checked;
+    const repeatVal = document.getElementById('noteRepeat').value;
     const id = uid();
     const styles = { ...activeStyles };
 
-    if (isRecurring) {
+    if (repeatVal !== 'none') {
+      const startDate = new Date(selected);
+      startDate.setHours(0, 0, 0, 0);
       recurring.push({
         id, text, time, emoji, categoryColor, styles, completed: false,
+        repeat: repeatVal,
+        startDate: startDate.toISOString(),
         month: selected.getMonth()+1,
         day: selected.getDate()
       });
@@ -1686,7 +1731,7 @@
     document.getElementById('noteText').value = '';
     document.getElementById('noteTime').value = '';
     document.getElementById('noteEmoji').value = '';
-    document.getElementById('noteRecurring').checked = false;
+    document.getElementById('noteRepeat').value = 'none';
 
     activeStyles = { bold: false, italic: false, strike: false };
     document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
