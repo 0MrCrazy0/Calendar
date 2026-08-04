@@ -2,1016 +2,779 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#6c5ce7">
-  
-  <!-- Web App & PWA Support -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Calendar">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%236c5ce7'/%3E%3Ctext y='.9em' font-size='70' x='50%25' text-anchor='middle' fill='white'%3E📅%3C/text%3E%3C/svg%3E">
-
-  <title>Desktop Calendar V12.1</title>
-  <link rel="manifest" href="manifest.json">
-
-  <!-- Google Fonts Preconnect -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-  <!-- 40+ Google Fonts Selection -->
-  <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Bangers&family=Caveat:wght@400;700&family=Cinzel:wght@400;600&family=Comfortaa:wght@300;400;500;600;700&family=Dancing+Script:wght@400;700&family=Fredoka:wght@300;400;500;600&family=Great+Vibes&family=Inter:wght@300;400;500;600;700&family=Kalam:wght@300;400;700&family=Lobster&family=Manrope:wght@300;400;500;600;700&family=Merriweather:wght@300;400;700&family=Nunito:wght@300;400;500;600;700&family=Orbitron:wght@400;600&family=Outfit:wght@300;400;500;600;700&family=Pacifico&family=Patrick+Hand&family=Permanent+Marker&family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500;600;700&family=Quicksand:wght@300;400;500;600;700&family=Satisfy&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0f0f13;
-    --card: #16161e;
-    --text: #e8e8ed;
-    --muted: #8b8b9a;
-    --accent: #6c5ce7;
-    --accent-text: #ffffff;
-    --today: #00cec9;
-    --today-text: #0f0f13;
-    --mark: #ff7675;
-    --event: #fdcb6e;
-    --event-text: #111111;
-    --day-border: rgba(255, 255, 255, 0.12);
-    --day-text: #e8e8ed;
-    --day-bg: transparent;
-    --font: 'Poppins', 'Segoe UI', system-ui, sans-serif;
-    --scale: 1;
-  }
-
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  html, body {
-    height: 100%;
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font);
-    overscroll-behavior-y: none;
-  }
-
-  body {
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    padding: 12px;
-    overflow-y: auto;
-  }
-
-  .app {
-    width: 100%;
-    max-width: 440px;
-    background: var(--card);
-    border-radius: 20px;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    overflow: hidden;
-    margin-bottom: 30px;
-    transform: scale(var(--scale));
-    transform-origin: top center;
-    transition: transform 0.2s ease;
-  }
-
-  /* PHOTO & HEADER LAYOUT */
-  .picture-canvas-container {
-    width: 100%;
-    height: 220px;
-    background: #111;
-    overflow: hidden;
-    position: relative;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .picture-canvas-container img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
-    display: block;
-  }
-
-  .header {
-    background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 65%, #a29bfe));
-    color: var(--accent-text);
-    padding: 22px 16px 18px;
-    text-align: center;
-    position: relative;
-    margin-top: -2px;
-  }
-
-  .time {
-    font-size: 38px;
-    font-weight: 300;
-    letter-spacing: 2px;
-    line-height: 1;
-    margin-top: 6px;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .date-line {
-    font-size: 13px;
-    opacity: 0.92;
-    margin-top: 6px;
-    font-weight: 500;
-  }
-
-  .settings-btn {
-    position: absolute;
-    top: 18px;
-    right: 16px;
-    background: rgba(0, 0, 0, 0.25);
-    border: none;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    color: var(--accent-text);
-    cursor: pointer;
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 0;
-    padding: 0;
-    transition: background 0.2s, transform 0.2s;
-  }
-
-  .settings-btn:hover {
-    background: rgba(0, 0, 0, 0.4);
-    transform: rotate(45deg);
-  }
-
-  /* CONTROLS & SEARCH BAR */
-  .controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
-  }
-
-  .nav-btn {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: var(--text);
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 18px;
-    transition: all 0.2s ease;
-  }
-
-  .nav-btn:hover {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--accent-text);
-  }
-
-  .month-year {
-    font-size: 16px;
-    font-weight: 600;
-  }
-
-  .search-bar {
-    display: flex;
-    gap: 8px;
-    padding: 12px;
-  }
-
-  .search-bar input {
-    flex: 1;
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: white;
-    padding: 10px 12px;
-    border-radius: 10px;
-    font-size: 13px;
-    outline: none;
-  }
-
-  .search-bar input:focus {
-    border-color: var(--accent);
-  }
-
-  .search-bar button {
-    padding: 10px 16px;
-    border: none;
-    border-radius: 10px;
-    background: var(--accent);
-    color: var(--accent-text);
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 13px;
-  }
-
-  #todayBtn {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: var(--text);
-  }
-
-  #todayBtn:hover {
-    background: var(--today);
-    color: var(--today-text);
-    border-color: var(--today);
-  }
-
-  #searchResults {
-    max-height: 220px;
-    overflow-y: auto;
-    padding: 0 12px;
-  }
-
-  .search-item {
-    padding: 10px;
-    margin-bottom: 6px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.05);
-    cursor: pointer;
-    font-size: 13px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .search-item:hover {
-    background: rgba(255, 255, 255, 0.12);
-  }
-
-  /* GRID */
-  .weekdays {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    padding: 8px 10px 4px;
-    font-size: 11px;
-    color: var(--muted);
-    text-align: center;
-    font-weight: 600;
-  }
-
-  .days {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 1px;
-    background: var(--day-border);
-    border: 1px solid var(--day-border);
-    margin: 0 10px 8px;
-    border-radius: 8px;
-    overflow: hidden;
-    touch-action: pan-y;
-  }
-
-  .day {
-    aspect-ratio: 1;
-    height: 100%;
-    max-height: 58px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding-top: 4px;
-    position: relative;
-    cursor: pointer;
-    user-select: none;
-    background: var(--day-bg);
-    color: var(--day-text);
-    font-size: 13px;
-    font-weight: 500;
-    overflow: hidden;
-    box-sizing: border-box;
-  }
-
-  .day:hover {
-    background: rgba(108, 92, 231, 0.15);
-  }
-
-  .day.other-month {
-    color: var(--muted);
-    opacity: 0.45;
-  }
-
-  .day.today {
-    background: var(--today);
-    color: var(--today-text);
-    font-weight: 700;
-  }
-
-  .day.selected {
-    box-shadow: inset 0 0 0 2px var(--accent);
-    z-index: 1;
-  }
-
-  .day.marked::after {
-    content: '';
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    width: 6px;
-    height: 6px;
-    background: var(--mark-color, var(--mark));
-    border-radius: 50%;
-  }
-
-  .day-num {
-    line-height: 1;
-    font-size: 12px;
-  }
-
-  .day-emoji {
-    font-size: 11px;
-    line-height: 1.1;
-    margin-top: 2px;
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 90%;
-  }
-
-  .day-badge {
-    position: absolute;
-    bottom: 2px;
-    right: 2px;
-    background: var(--event);
-    color: var(--event-text);
-    font-size: 9px;
-    font-weight: 700;
-    min-width: 13px;
-    height: 13px;
-    border-radius: 7px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 2px;
-    line-height: 0;
-  }
-
-  /* DAY PANEL & TEXT STYLE CONTROLS */
-  .day-panel {
-    padding: 12px 14px 14px;
-    border-top: 1px solid rgba(255, 255, 255, 0.09);
-    background: rgba(0, 0, 0, 0.2);
-  }
-
-  .panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-
-  .panel-actions {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-  }
-
-  .panel-date {
-    font-size: 14px;
-    font-weight: 600;
-  }
-
-  .mark-btn, .toggle-form-btn {
-    background: transparent;
-    border: 1px solid var(--mark);
-    color: var(--mark);
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.2s ease;
-  }
-
-  .toggle-form-btn {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  .toggle-form-btn.active, .toggle-form-btn:hover {
-    background: var(--accent);
-    color: var(--accent-text);
-  }
-
-  .mark-btn.active, .mark-btn:hover {
-    background: var(--mark);
-    color: #ffffff;
-  }
-
-  .mark-color-picker {
-    width: 24px;
-    height: 24px;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    background: none;
-    padding: 0;
-  }
-
-  .note-form {
-    margin-bottom: 10px;
-    display: none;
-  }
-
-  .note-form.open {
-    display: block;
-  }
-
-  .note-form input[type="text"], .note-form input[type="time"] {
-    width: 100%;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: var(--text);
-    padding: 8px 11px;
-    border-radius: 8px;
-    font-size: 13px;
-    outline: none;
-    margin-bottom: 6px;
-  }
-
-  .note-form input[type="time"] {
-    width: 100%;
-    color-scheme: dark;
-  }
-
-  .note-form input:focus {
-    border-color: var(--accent);
-  }
-
-  /* TEXT FORMATTING TOOLBAR */
-  .text-style-bar {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 6px;
-  }
-
-  .style-btn {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: var(--text);
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 12px;
-    cursor: pointer;
-    user-select: none;
-    transition: all 0.2s;
-  }
-
-  .style-btn.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--accent-text);
-  }
-
-  .note-options {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    margin-bottom: 8px;
-    flex-wrap: wrap;
-  }
-
-  .note-options input[type="text"] {
-    width: 75px;
-    text-align: center;
-    font-size: 15px;
-    padding: 6px;
-    margin-bottom: 0;
-  }
-
-  .note-options select {
-    flex: 1;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: var(--text);
-    padding: 6px;
-    border-radius: 6px;
-    font-size: 12px;
-    min-width: 140px;
-  }
-
-  .note-options label {
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    cursor: pointer;
-  }
-
-  .add-note-btn {
-    width: 100%;
-    padding: 10px;
-    background: var(--accent);
-    border: none;
-    color: var(--accent-text);
-    border-radius: 8px;
-    font-size: 13px;
-    cursor: pointer;
-    font-weight: 600;
-  }
-
-  .add-note-btn:hover {
-    filter: brightness(1.1);
-  }
-
-  .event-list {
-    list-style: none;
-    max-height: 160px;
-    overflow-y: auto;
-  }
-
-  .event-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    font-size: 13px;
-    gap: 8px;
-  }
-
-  .event-item:last-child {
-    border-bottom: none;
-  }
-
-  .event-item.completed .event-text span {
-    text-decoration: line-through;
-    opacity: 0.6;
-  }
-
-  .event-item input[type="checkbox"] {
-    cursor: pointer;
-    accent-color: var(--accent);
-    width: 16px;
-    height: 16px;
-  }
-
-  .event-text {
-    flex: 1;
-  }
-
-  .event-time {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--accent);
-    margin-right: 4px;
-  }
-
-  .event-emoji {
-    font-size: 15px;
-    margin-right: 4px;
-  }
-
-  .event-recurring {
-    font-size: 10px;
-    color: var(--muted);
-    margin-top: 2px;
-  }
-
-  .delete-event {
-    background: none;
-    border: none;
-    color: var(--mark);
-    cursor: pointer;
-    font-size: 16px;
-    opacity: 0.7;
-  }
-
-  .delete-event:hover {
-    opacity: 1;
-  }
-
-  /* CUSTOM CATEGORY MODAL & MANAGEMENT */
-  .custom-cat-box {
-    display: none;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 10px;
-    padding: 10px;
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 10px;
-  }
-
-  .custom-cat-box.open {
-    display: flex;
-  }
-
-  .custom-cat-inputs {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-  }
-
-  .custom-cat-inputs input[type="text"] {
-    margin-bottom: 0;
-  }
-
-  #customCatName {
-    flex: 1;
-  }
-
-  #customCatEmoji {
-    width: 45px;
-    text-align: center;
-  }
-
-  .custom-cat-inputs input[type="color"] {
-    width: 34px;
-    height: 32px;
-    border: none;
-    border-radius: 6px;
-    background: none;
-    cursor: pointer;
-  }
-
-  .custom-cat-inputs button {
-    padding: 8px 12px;
-    background: var(--accent);
-    color: var(--accent-text);
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  .custom-cat-list {
-    margin-top: 4px;
-    max-height: 100px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .cat-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: rgba(255, 255, 255, 0.05);
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 12px;
-  }
-
-  .cat-item-info {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .cat-item-color {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-  }
-
-  .delete-cat-btn {
-    background: none;
-    border: none;
-    color: var(--mark);
-    font-size: 14px;
-    cursor: pointer;
-    padding: 0 4px;
-  }
-
-  /* SETTINGS MENU */
-  .settings {
-    display: none;
-    padding: 14px;
-    border-top: 1px solid rgba(255, 255, 255, 0.09);
-    background: rgba(0, 0, 0, 0.2);
-    max-height: 520px;
-    overflow-y: auto;
-  }
-
-  .settings.open {
-    display: block;
-  }
-
-  .settings h3 {
-    font-size: 11px;
-    margin: 12px 0 8px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .settings h3:first-child {
-    margin-top: 0;
-  }
-
-  .theme-row {
-    display: flex;
-    gap: 7px;
-    flex-wrap: wrap;
-    margin-bottom: 10px;
-  }
-
-  .theme-swatch {
-    width: 28px;
-    height: 28px;
-    border-radius: 7px;
-    cursor: pointer;
-    border: 2px solid transparent;
-  }
-
-  .theme-swatch:hover {
-    transform: scale(1.1);
-  }
-
-  /* TOGGLE SWITCHES */
-  .toggle-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 6px 0;
-    margin-bottom: 6px;
-  }
-
-  .toggle-row label {
-    font-size: 12px;
-    color: var(--text);
-  }
-
-  .switch {
-    position: relative;
-    display: inline-block;
-    width: 40px;
-    height: 22px;
-  }
-
-  .switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-
-  .slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-color: rgba(255, 255, 255, 0.2);
-    transition: .3s;
-    border-radius: 22px;
-  }
-
-  .slider:before {
-    position: absolute;
-    content: "";
-    height: 16px;
-    width: 16px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    transition: .3s;
-    border-radius: 50%;
-  }
-
-  input:checked + .slider {
-    background-color: var(--accent);
-  }
-
-  input:checked + .slider:before {
-    transform: translateX(18px);
-  }
-
-  .color-pickers {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-
-  .picker-group label {
-    display: block;
-    font-size: 11px;
-    color: var(--muted);
-    margin-bottom: 2px;
-  }
-
-  .picker-group input[type="color"] {
-    width: 100%;
-    height: 28px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    background: none;
-  }
-
-  .slider-group {
-    margin-bottom: 10px;
-  }
-
-  .slider-group label {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    color: var(--muted);
-    margin-bottom: 3px;
-  }
-
-  .slider-group input[type="range"] {
-    width: 100%;
-    accent-color: var(--accent);
-  }
-
-  .font-select, .photo-mode-row {
-    margin-bottom: 10px;
-  }
-
-  .font-select select {
-    width: 100%;
-    padding: 8px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: var(--text);
-    border-radius: 8px;
-    font-size: 13px;
-  }
-
-  .photo-mode-row {
-    display: flex;
-    gap: 6px;
-  }
-
-  .mode-btn {
-    flex: 1;
-    padding: 7px 4px;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: transparent;
-    color: var(--text);
-    font-size: 12px;
-    cursor: pointer;
-  }
-
-  .mode-btn.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--accent-text);
-  }
-
-  .upload-month-btn, .action-setting-btn {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 8px;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: transparent;
-    color: var(--text);
-    font-size: 13px;
-    cursor: pointer;
-    text-align: center;
-  }
-
-  .upload-month-btn:hover, .action-setting-btn:hover {
-    background: rgba(255, 255, 255, 0.07);
-  }
-
-  .data-btns {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-
-  .install-btn {
-    width: 100%;
-    padding: 10px;
-    background: var(--accent);
-    border: none;
-    color: var(--accent-text);
-    border-radius: 9px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    margin: 8px 0;
-    display: none;
-  }
-
-  .reset-btn {
-    width: 100%;
-    padding: 9px;
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: var(--text);
-    border-radius: 9px;
-    cursor: pointer;
-    font-size: 13px;
-  }
-
-  .reset-btn:hover {
-    background: rgba(255, 255, 255, 0.07);
-  }
-
-  .footer {
-    text-align: center;
-    padding: 7px;
-    font-size: 10px;
-    color: var(--muted);
-    border-top: 1px solid rgba(255, 255, 255, 0.09);
-    padding-bottom: max(7px, env(safe-area-inset-bottom));
-  }
-
-  input[type="file"] {
-    display: none;
-  }
-
-  /* MOBILE PWA FULL-BLEED STYLING */
-  @media (max-width: 600px) {
-    body {
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Desktop Calendar Pro V12.1</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;500&family=Playfair+Display:wght@500;700&family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Poppins:wght@400;500;600&family=Roboto:wght@400;500;700&display=swap');
+
+    :root {
+      --bg: #0f0f13;
+      --card: #16161e;
+      --text: #e8e8ed;
+      --muted: #8b8b9a;
+      --accent: #6c5ce7;
+      --today: #00cec9;
+      --mark: #ff7675;
+      --event: #fdcb6e;
+      --day-border: #2a2a35;
+      --day-text: #e8e8ed;
+      --day-bg: rgba(255, 255, 255, 0.02);
+      --font: 'Plus Jakarta Sans', sans-serif;
+      --scale: 1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
       padding: 0;
+      font-family: var(--font);
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      transform: scale(var(--scale));
+      transform-origin: top center;
+      transition: transform 0.2s ease;
+    }
+
+    header {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card);
+      padding: 16px 24px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      border: 1px solid var(--day-border);
+      margin-bottom: 20px;
+    }
+
+    .header-left {
+      display: flex;
+      flex-direction: column;
+    }
+
+    #clock {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 1px;
+    }
+
+    #fullDate {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .search-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    #searchBox {
+      background: var(--bg);
+      border: 1px solid var(--day-border);
+      color: var(--text);
+      padding: 8px 12px 8px 32px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      width: 200px;
+      transition: width 0.3s ease;
+    }
+
+    #searchBox:focus {
+      width: 260px;
+      border-color: var(--accent);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      pointer-events: none;
+    }
+
+    #searchResults {
+      position: absolute;
+      top: 42px;
+      left: 0;
+      width: 260px;
+      background: var(--card);
+      border: 1px solid var(--day-border);
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+      z-index: 1000;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .search-item {
+      padding: 8px 12px;
+      font-size: 12px;
+      border-bottom: 1px solid var(--day-border);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .search-item:hover {
+      background: rgba(255,255,255,0.05);
+    }
+
+    .icon-btn {
+      background: var(--bg);
+      border: 1px solid var(--day-border);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .icon-btn:hover {
+      border-color: var(--accent);
+      background: rgba(108, 92, 231, 0.1);
+    }
+
+    .main-layout {
+      width: 100%;
+      max-width: 1200px;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .main-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .calendar-container {
+      background: var(--card);
+      border-radius: 16px;
+      border: 1px solid var(--day-border);
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .month-banner {
+      position: relative;
+      height: 140px;
+      overflow: hidden;
+      display: flex;
+      align-items: flex-end;
+      padding: 16px 24px;
+    }
+
+    .month-banner img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: brightness(0.6);
+      z-index: 1;
+    }
+
+    .month-banner-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to top, var(--card) 0%, transparent 100%);
+      z-index: 2;
+    }
+
+    .month-nav-container {
+      position: relative;
+      z-index: 3;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #monthYear {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+
+    .month-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .month-btn {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      backdrop-filter: blur(4px);
+      transition: background 0.2s;
+    }
+
+    .month-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .weekdays-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      padding: 12px 16px 8px 16px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: var(--card);
+      border-bottom: 1px solid var(--day-border);
+    }
+
+    .days-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      grid-auto-rows: minmax(85px, 1fr);
+      padding: 12px;
+      gap: 6px;
       background: var(--card);
     }
 
-    .app {
-      max-width: 100%;
-      border-radius: 0;
-      border: none;
-      box-shadow: none;
-      margin-bottom: 0;
-      min-height: 100vh;
-      min-height: -webkit-fill-available;
+    .day {
+      background: var(--day-bg);
+      border: 1px solid var(--day-border);
+      border-radius: 10px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s ease;
+      overflow: hidden;
     }
 
-    .picture-canvas-container {
-      height: 180px;
-      padding-top: env(safe-area-inset-top);
+    .day:hover {
+      border-color: var(--accent);
+      background: rgba(255,255,255,0.04);
+      transform: translateY(-2px);
     }
-  }
-</style>
+
+    .day.other-month {
+      opacity: 0.35;
+    }
+
+    .day.today {
+      border-color: var(--today);
+      background: rgba(0, 206, 201, 0.05);
+    }
+
+    .day.today .day-num {
+      color: var(--today);
+      font-weight: 700;
+    }
+
+    .day.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.3);
+    }
+
+    .day.marked {
+      border-color: var(--mark-color, var(--mark));
+      background: color-mix(in srgb, var(--mark-color, var(--mark)) 12%, transparent);
+    }
+
+    .day-num {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--day-text);
+    }
+
+    .day-emoji {
+      font-size: 14px;
+      align-self: flex-start;
+      margin-top: 2px;
+    }
+
+    .day-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: var(--event);
+      color: #000;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 5px;
+      border-radius: 6px;
+    }
+
+    .side-panel {
+      background: var(--card);
+      border-radius: 16px;
+      border: 1px solid var(--day-border);
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      height: fit-content;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--day-border);
+      padding-bottom: 12px;
+    }
+
+    #panelDate {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .panel-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .action-btn {
+      background: var(--bg);
+      border: 1px solid var(--day-border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .action-btn.active {
+      background: var(--mark);
+      border-color: var(--mark);
+      color: #fff;
+    }
+
+    .event-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    .event-item {
+      background: var(--bg);
+      border: 1px solid var(--day-border);
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .event-item.completed {
+      opacity: 0.5;
+      text-decoration: line-through;
+    }
+
+    .event-text {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+      overflow: hidden;
+      word-break: break-word;
+    }
+
+    .event-time {
+      font-size: 11px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.05);
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+
+    .event-emoji {
+      font-size: 13px;
+    }
+
+    .event-recurring {
+      font-size: 10px;
+      color: var(--accent);
+      background: rgba(108, 92, 231, 0.1);
+      padding: 2px 4px;
+      border-radius: 4px;
+      margin-left: 4px;
+    }
+
+    .delete-event {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 16px;
+      padding: 2px 6px;
+    }
+
+    .delete-event:hover {
+      color: var(--mark);
+    }
+
+    .note-form {
+      background: var(--bg);
+      border: 1px solid var(--day-border);
+      padding: 12px;
+      border-radius: 12px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .note-form.open {
+      display: flex;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .form-input, .form-select {
+      background: var(--card);
+      border: 1px solid var(--day-border);
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      outline: none;
+      width: 100%;
+    }
+
+    .form-input:focus, .form-select:focus {
+      border-color: var(--accent);
+    }
+
+    .formatting-toolbar {
+      display: flex;
+      gap: 4px;
+    }
+
+    .format-btn {
+      background: var(--card);
+      border: 1px solid var(--day-border);
+      color: var(--text);
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .format-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .save-event-btn {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      padding: 8px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .save-event-btn:hover {
+      opacity: 0.9;
+    }
+
+    /* Settings Slide-down Panel */
+    .settings-panel {
+      position: fixed;
+      top: 0;
+      right: -420px;
+      width: 400px;
+      height: 100vh;
+      background: var(--card);
+      border-left: 1px solid var(--day-border);
+      box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+      z-index: 2000;
+      transition: right 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      overflow-y: auto;
+      gap: 20px;
+    }
+
+    .settings-panel.open {
+      right: 0;
+    }
+
+    .settings-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--day-border);
+      padding-bottom: 12px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .settings-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .settings-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .theme-row {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+    }
+
+    .theme-swatch {
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.2s;
+    }
+
+    .theme-swatch:hover {
+      transform: scale(1.1);
+      border-color: #fff;
+    }
+
+    .color-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .color-picker-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg);
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--day-border);
+      font-size: 11px;
+    }
+
+    .color-picker-item input[type="color"] {
+      border: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      background: none;
+    }
+
+    .photo-mode-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--day-border);
+      color: var(--text);
+      padding: 8px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .mode-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .custom-cat-box {
+      background: var(--bg);
+      border: 1px solid var(--day-border);
+      padding: 10px;
+      border-radius: 8px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .custom-cat-box.open {
+      display: flex;
+    }
+
+    .cat-item-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+
+    .cat-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card);
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+    }
+
+    .cat-item-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .cat-item-color {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .delete-cat-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+    }
+  </style>
 </head>
 <body>
-  <div class="app" id="app">
-    <!-- Header Photo -->
-    <div class="picture-canvas-container">
-      <img id="monthPhoto" src="" alt="Month Header Photo">
+
+  <header>
+    <div class="header-left">
+      <div id="clock">12:00:00 AM</div>
+      <div id="fullDate">Wednesday, August 5, 2026</div>
+    </div>
+    <div class="header-right">
+      <div class="search-container">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchBox" data-i18n-placeholder="searchPlaceholder" placeholder="Search notes, emoji, date...">
+        <div id="searchResults"></div>
+      </div>
+      <button class="icon-btn" id="todayBtn" data-i18n="todayBtn">📍 Today</button>
+      <button class="icon-btn" id="settingsBtn">⚙️</button>
+    </div>
+  </header>
+
+  <div class="main-layout">
+    <div class="calendar-container">
+      <div class="month-banner">
+        <img id="monthPhoto" src="" alt="Month Banner">
+        <div class="month-banner-overlay"></div>
+        <div class="month-nav-container">
+          <h2 id="monthYear">August 2026</h2>
+          <div class="month-controls">
+            <button class="month-btn" id="prevMonth">‹</button>
+            <button class="month-btn" id="nextMonth">›</button>
+          </div>
+        </div>
+      </div>
+      <div class="weekdays-grid" id="weekdaysGrid">
+        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+      </div>
+      <div class="days-grid" id="daysGrid"></div>
     </div>
 
-    <!-- Clock & Date Header -->
-    <div class="header">
-      <button class="settings-btn" id="settingsBtn" title="Settings">⚙</button>
-      <div class="time" id="clock">00:00:00</div>
-      <div class="date-line" id="fullDate">Loading...</div>
-    </div>
-
-    <!-- Calendar Controls -->
-    <div class="controls">
-      <button class="nav-btn" id="prevMonth" title="Previous Month">‹</button>
-      <div class="month-year" id="monthYear">Month Year</div>
-      <button class="nav-btn" id="nextMonth" title="Next Month">›</button>
-    </div>
-
-    <!-- Global & Date Search Bar -->
-    <div class="search-bar">
-      <input id="searchBox" type="text" placeholder="🔍 Search notes, emojis or date...">
-      <button id="searchBtn" data-i18n="searchBtn">Search</button>
-      <button id="todayBtn" title="Return to current day">📍 Today</button>
-    </div>
-    <div id="searchResults"></div>
-
-    <!-- Weekday Headers -->
-    <div class="weekdays" id="weekdaysGrid">
-      <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-    </div>
-
-    <!-- Days Grid -->
-    <div class="days" id="daysGrid"></div>
-
-    <!-- Selected Day Detail Panel -->
-    <div class="day-panel">
+    <div class="side-panel">
       <div class="panel-header">
-        <div class="panel-date" id="panelDate">Select a day</div>
+        <div id="panelDate">Wed, Aug 5, 2026</div>
         <div class="panel-actions">
-          <button class="toggle-form-btn" id="toggleFormBtn">+ Add Event</button>
-          <input type="color" id="markColorPicker" class="mark-color-picker" value="#ff7675" title="Custom Mark Color">
-          <button class="mark-btn" id="markBtn">Mark Day</button>
+          <button class="action-btn" id="markBtn" data-i18n="markDay">Mark Day</button>
+          <input type="color" id="markColorPicker" value="#ff7675" style="width: 24px; height: 28px; border: none; background: none; cursor: pointer; border-radius: 4px;" title="Mark Color">
+          <button class="action-btn" id="toggleFormBtn" data-i18n="addEventBtn">+ Add</button>
         </div>
       </div>
 
-      <!-- Toggleable Note Creation Form -->
       <div class="note-form" id="noteForm">
-        <!-- Text Styling Bar -->
-        <div class="text-style-bar">
-          <button type="button" class="style-btn" id="btnBold" title="Bold"><b>B</b></button>
-          <button type="button" class="style-btn" id="btnItalic" title="Italic"><i>I</i></button>
-          <button type="button" class="style-btn" id="btnStrike" title="Strikethrough"><s>S</s></button>
+        <div class="form-row">
+          <input type="text" id="noteText" class="form-input" data-i18n-placeholder="notePlaceholder" placeholder="Add note or event…">
+          <input type="text" id="noteEmoji" class="form-input" style="width: 50px;" data-i18n-placeholder="emojiPlaceholder" placeholder="Emoji">
         </div>
-
-        <input type="text" id="noteText" placeholder="Add note or event…">
-        <input type="time" id="noteTime" title="Optional Event Time">
-
-        <div class="note-options">
-          <input type="text" id="noteEmoji" placeholder="Emoji" maxlength="8" title="Paste one or multiple emojis">
-          
-          <select id="eventCategory" title="Event Category / Color">
+        <div class="form-row">
+          <input type="time" id="noteTime" class="form-input" title="Optional Event Time">
+          <select id="noteRepeat" class="form-select">
+            <option value="none" data-i18n="repNone">Don't repeat</option>
+            <option value="daily" data-i18n="repDaily">Repeat daily</option>
+            <option value="weekly" data-i18n="repWeekly">Repeat weekly</option>
+            <option value="fortnightly" data-i18n="repFortnightly">Repeat fortnightly</option>
+            <option value="yearly" data-i18n="repYearly">Repeat yearly</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <select id="eventCategory" class="form-select">
             <option value="#fdcb6e" data-i18n="catDefault">💛 Default / Gold</option>
             <option value="#6c5ce7" data-i18n="catImportant">💜 Important / Purple</option>
             <option value="#ff7675" data-i18n="catUrgent">❤️ Urgent / Red</option>
@@ -1022,1297 +785,1194 @@
             <option value="#74b9ff" data-i18n="catFitness">🟦 Fitness / Blue</option>
             <option value="__NEW__" data-i18n="catManage">⚙️ Manage / Create Custom Category...</option>
           </select>
-          <select id="noteRepeat" title="Repeat Frequency">
-            <option value="none" data-i18n="repNone">Don't repeat</option>
-            <option value="daily" data-i18n="repDaily">Repeat daily</option>
-            <option value="weekly" data-i18n="repWeekly">Repeat weekly</option>
-            <option value="fortnightly" data-i18n="repFortnightly">Repeat fortnightly</option>
-            <option value="yearly" data-i18n="repYearly">Repeat yearly</option>
-          </select>
-        </div>
-
-        <!-- Custom Category Creator & Management Box -->
-        <div class="custom-cat-box" id="customCatBox">
-          <div class="custom-cat-inputs">
-            <input type="text" id="customCatEmoji" placeholder="✨" maxlength="4" title="Category Emoji">
-            <input type="text" id="customCatName" placeholder="Category Name (e.g. Hobbies)" data-i18n-placeholder="catNamePlaceholder">
-            <input type="color" id="customCatColor" value="#a29bfe">
-            <button type="button" id="saveCustomCatBtn" data-i18n="saveBtn">Save</button>
+          <div class="formatting-toolbar">
+            <button class="format-btn" id="btnBold"><b>B</b></button>
+            <button class="format-btn" id="btnItalic"><i>I</i></button>
+            <button class="format-btn" id="btnStrike"><s>S</s></button>
           </div>
-          <div class="custom-cat-list" id="customCatList"></div>
         </div>
 
-        <button class="add-note-btn" id="addNoteBtn" data-i18n="saveEventBtn">Save Event / Note</button>
+        <div class="custom-cat-box" id="customCatBox">
+          <div class="form-row">
+            <input type="text" id="customCatName" class="form-input" data-i18n-placeholder="catNamePlaceholder" placeholder="Category Name">
+            <input type="text" id="customCatEmoji" class="form-input" style="width: 50px;" placeholder="✨">
+            <input type="color" id="customCatColor" value="#0984e3" style="width: 32px; height: 32px; border:none; background:none; cursor:pointer;">
+          </div>
+          <button type="button" class="action-btn" id="saveCustomCatBtn" style="width: 100%;">Save Category</button>
+          <div class="cat-item-list" id="customCatList"></div>
+        </div>
+
+        <button class="save-event-btn" id="addNoteBtn" data-i18n="saveEventBtn">Save Event / Note</button>
       </div>
 
-      <!-- Events List Displayed Below Header/Hidden Section -->
       <ul class="event-list" id="eventList"></ul>
     </div>
+  </div>
 
-    <!-- Settings Menu Drawer -->
-    <div class="settings" id="settingsPanel">
-      <h3 data-i18n="lblLanguage">Language</h3>
-      <div class="font-select">
-        <select id="languageSelect">
-          <option value="en">English</option>
-          <option value="tl">Tagalog</option>
-          <option value="no">Norsk (Norwegian)</option>
-        </select>
-      </div>
+  <!-- Settings Panel -->
+  <div class="settings-panel" id="settingsPanel">
+    <div class="settings-header">
+      <span data-i18n="settingsTitle">Settings & Customization</span>
+      <button class="icon-btn" onclick="document.getElementById('settingsPanel').classList.remove('open')">✕</button>
+    </div>
 
-      <h3 data-i18n="lblThemes">Quick Themes (12 Presets)</h3>
+    <div class="settings-section">
+      <div class="settings-title" data-i18n="lblLanguage">Language</div>
+      <select id="languageSelect" class="form-select">
+        <option value="en">English</option>
+        <option value="tl">Filipino / Tagalog</option>
+        <option value="no">Norsk (Norwegian)</option>
+      </select>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-title" data-i18n="lblThemes">Quick Themes (12 Presets)</div>
       <div class="theme-row" id="themeRow"></div>
+    </div>
 
-      <h3 data-i18n="lblPreferences">Preferences</h3>
-      <div class="toggle-row">
-        <label for="timeFormatToggle" data-i18n="lbl24Hour">24-Hour Time Format</label>
-        <label class="switch">
-          <input type="checkbox" id="timeFormatToggle">
-          <span class="slider"></span>
-        </label>
+    <div class="settings-section">
+      <div class="settings-title" data-i18n="lblPreferences">Preferences</div>
+      <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px;">
+        <span data-i18n="lbl24Hour">24-Hour Time Format</span>
+        <input type="checkbox" id="timeFormatToggle">
       </div>
-      <div class="toggle-row">
-        <label for="autoMarkPastToggle" data-i18n="lblAutoMark">Auto Mark Past Days</label>
-        <label class="switch">
-          <input type="checkbox" id="autoMarkPastToggle">
-          <span class="slider"></span>
-        </label>
+      <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px;">
+        <span data-i18n="lblAutoMark">Auto Mark Past Days</span>
+        <input type="checkbox" id="autoMarkPastToggle" checked>
       </div>
+    </div>
 
-      <h3 data-i18n="lblDataSafety">Data Safety & Export</h3>
-      <div class="data-btns">
-        <button class="action-setting-btn" id="exportJsonBtn" data-i18n="btnBackup">📥 Backup (JSON)</button>
-        <button class="action-setting-btn" id="importJsonBtn" data-i18n="btnRestore">📤 Restore (JSON)</button>
+    <div class="settings-section">
+      <div class="settings-title" data-i18n="lblCustomColors">Custom Colors</div>
+      <div class="color-picker-grid">
+        <div class="color-picker-item"><span data-i18n="colAccent">Accent</span><input type="color" id="cAccent"></div>
+        <div class="color-picker-item"><span data-i18n="colToday">Today</span><input type="color" id="cToday"></div>
+        <div class="color-picker-item"><span data-i18n="colMark">Mark</span><input type="color" id="cMark"></div>
+        <div class="color-picker-item"><span data-i18n="colEvent">Event / Badge</span><input type="color" id="cEvent"></div>
+        <div class="color-picker-item"><span data-i18n="colBorder">Day Border</span><input type="color" id="cBorder"></div>
+        <div class="color-picker-item"><span data-i18n="colDayText">Day Text</span><input type="color" id="cDayText"></div>
+        <div class="color-picker-item"><span data-i18n="colDayBg">Day Background</span><input type="color" id="cDayBg"></div>
+        <div class="color-picker-item"><span data-i18n="colMuted">Muted Text</span><input type="color" id="cMuted"></div>
       </div>
-      <button class="action-setting-btn" id="exportIcsBtn" data-i18n="btnIcs">📅 Export to .ics (iCal)</button>
-      <input type="file" id="importJsonInput" accept=".json">
+    </div>
 
-      <h3 data-i18n="lblCustomColors">Custom Colors</h3>
-      <div class="color-pickers">
-        <div class="picker-group"><label data-i18n="colAccent">Accent</label><input type="color" id="cAccent" value="#6c5ce7"></div>
-        <div class="picker-group"><label data-i18n="colToday">Today</label><input type="color" id="cToday" value="#00cec9"></div>
-        <div class="picker-group"><label data-i18n="colMark">Mark</label><input type="color" id="cMark" value="#ff7675"></div>
-        <div class="picker-group"><label data-i18n="colEvent">Event / Badge</label><input type="color" id="cEvent" value="#fdcb6e"></div>
-        <div class="picker-group"><label data-i18n="colBorder">Day Border</label><input type="color" id="cBorder" value="#2a2a35"></div>
-        <div class="picker-group"><label data-i18n="colDayText">Day Text</label><input type="color" id="cDayText" value="#e8e8ed"></div>
-        <div class="picker-group"><label data-i18n="colDayBg">Day Background</label><input type="color" id="cDayBg" value="#16161e"></div>
-        <div class="picker-group"><label data-i18n="colMuted">Muted Text</label><input type="color" id="cMuted" value="#8b8b9a"></div>
+    <div class="settings-section">
+      <div class="settings-title" data-i18n="lblFontLibrary">Font Library (40+ Fonts)</div>
+      <select id="fontSelect" class="form-select">
+        <option value="'Plus Jakarta Sans', sans-serif">Plus Jakarta Sans</option>
+        <option value="'Inter', sans-serif">Inter</option>
+        <option value="'Poppins', sans-serif">Poppins</option>
+        <option value="'Roboto', sans-serif">Roboto</option>
+        <option value="'Outfit', sans-serif">Outfit</option>
+        <option value="'Playfair Display', serif">Playfair Display</option>
+        <option value="'Fira Code', monospace">Fira Code (Monospace)</option>
+      </select>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-title" data-i18n="lblUiScale">UI Scale</div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <input type="range" id="scaleSlider" min="80" max="130" value="100" style="flex:1;">
+        <span id="scaleVal" style="font-size: 11px; width: 35px;">100%</span>
       </div>
+    </div>
 
-      <h3 data-i18n="lblFontLibrary">Font Library (40+ Fonts)</h3>
-      <div class="font-select">
-        <select id="fontSelect">
-          <option value="Poppins, sans-serif">Poppins (Clean Sans)</option>
-          <option value="Inter, sans-serif">Inter (Modern Sans)</option>
-          <option value="Outfit, sans-serif">Outfit (Trendy)</option>
-          <option value="Manrope, sans-serif">Manrope (Minimalist)</option>
-          <option value="Quicksand, sans-serif">Quicksand (Rounded)</option>
-          <option value="Nunito, sans-serif">Nunito (Soft)</option>
-          <option value="Comfortaa, cursive">Comfortaa (Rounded Tech)</option>
-          <option value="Fredoka, sans-serif">Fredoka (Playful)</option>
-          <option value="Caveat, cursive">Caveat (Handwritten)</option>
-          <option value="Kalam, cursive">Kalam (Casual Hand)</option>
-          <option value="Patrick Hand, cursive">Patrick Hand (Neat Hand)</option>
-          <option value="Permanent Marker, cursive">Permanent Marker (Bold Hand)</option>
-          <option value="Pacifico, cursive">Pacifico (Script)</option>
-          <option value="Dancing Script, cursive">Dancing Script (Elegant Script)</option>
-          <option value="Great Vibes, cursive">Great Vibes (Calligraphy)</option>
-          <option value="Satisfy, cursive">Satisfy (Fluid Script)</option>
-          <option value="Lobster, cursive">Lobster (Retro Script)</option>
-          <option value="Bangers, cursive">Bangers (Comic / Loud)</option>
-          <option value="Orbitron, sans-serif">Orbitron (Futuristic Tech)</option>
-          <option value="Audiowide, cursive">Audiowide (Cyberpunk)</option>
-          <option value="Cinzel, serif">Cinzel (Classic Serif)</option>
-          <option value="Playfair Display, serif">Playfair Display (High Fashion)</option>
-          <option value="Merriweather, serif">Merriweather (Readability Serif)</option>
-          <option value="'Segoe UI', system-ui, sans-serif">Segoe UI (Default System)</option>
-        </select>
-      </div>
-
-      <h3 data-i18n="lblUiScale">UI Scale</h3>
-      <div class="slider-group">
-        <label><span data-i18n="lblZoom">Zoom</span><span id="scaleVal">100%</span></label>
-        <input type="range" id="scaleSlider" min="70" max="140" value="100">
-      </div>
-
-      <h3 data-i18n="lblPhotoSettings">Month Photo Settings</h3>
-      <div class="photo-mode-row">
-        <button class="mode-btn" data-mode="monthly" data-i18n="modeMonthly">Monthly</button>
+    <div class="settings-section">
+      <div class="settings-title" data-i18n="lblPhotoSettings">Month Photo Settings</div>
+      <div class="photo-mode-group">
+        <button class="mode-btn active" data-mode="monthly" data-i18n="modeMonthly">Monthly</button>
         <button class="mode-btn" data-mode="random" data-i18n="modeRandom">Random</button>
         <button class="mode-btn" data-mode="custom" data-i18n="modeCustom">Custom</button>
       </div>
-      <div class="slider-group" id="randomGroup" style="display:none;">
-        <label><span data-i18n="lblInterval">Change interval</span><span id="intervalVal">30s</span></label>
-        <input type="range" id="intervalSlider" min="10" max="120" value="30">
+      <div id="randomGroup" style="display: none; margin-top: 6px;">
+        <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;" data-i18n="lblInterval">Change interval</div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <input type="range" id="intervalSlider" min="10" max="120" value="30" style="flex:1;">
+          <span id="intervalVal" style="font-size: 11px; width: 30px;">30s</span>
+        </div>
       </div>
-      <button class="upload-month-btn" id="uploadMonthBtn" data-i18n="btnUploadPhoto">📷 Upload Custom Photo</button>
-      <button class="upload-month-btn" id="removeCustomPhotoBtn" style="display:none; border-color:var(--mark); color:var(--mark);" data-i18n="btnRemovePhoto">🗑️ Remove Custom Photo</button>
-      <input type="file" id="monthPhotoInput" accept="image/*">
-
-      <button class="install-btn" id="installBtn" data-i18n="btnInstall">Install as App</button>
-      <button class="reset-btn" id="resetTheme" data-i18n="btnReset">Reset All Styles</button>
+      <input type="file" id="monthPhotoInput" accept="image/*" style="display: none;">
+      <div style="display: flex; gap: 8px; margin-top: 6px;">
+        <button class="action-btn" id="uploadMonthBtn" style="flex:1;" data-i18n="btnUploadPhoto">📷 Upload Photo</button>
+        <button class="action-btn" id="removeCustomPhotoBtn" style="flex:1; display:none;" data-i18n="btnRemovePhoto">🗑️ Remove Photo</button>
+      </div>
     </div>
 
-    <div class="footer">• Desktop Calendar V12.1 •</div>
+    <div class="settings-section">
+      <div class="settings-title" data-i18n="lblDataSafety">Data Safety & Export</div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <button class="action-btn" id="exportJsonBtn" data-i18n="btnBackup">📥 Backup (JSON)</button>
+        <button class="action-btn" id="importJsonBtn" data-i18n="btnRestore">📤 Restore (JSON)</button>
+        <input type="file" id="importJsonInput" accept=".json" style="display:none;">
+        <button class="action-btn" id="exportIcsBtn" data-i18n="btnIcs">📅 Export to .ics (iCal)</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <button class="action-btn" id="installBtn" style="display:none; background: var(--accent); color:#fff;" data-i18n="btnInstall">Install as App</button>
+      <button class="action-btn" id="resetTheme" style="background: rgba(255,118,117,0.1); border-color: var(--mark); color: var(--mark);" data-i18n="btnReset">Reset All Styles</button>
+    </div>
   </div>
 
-<script>
-  let current = new Date(), selected = new Date();
-  let marks = JSON.parse(localStorage.getItem('cal_marks') || '{}');
-  let notes = JSON.parse(localStorage.getItem('cal_notes') || '{}');
-  let recurring = JSON.parse(localStorage.getItem('cal_recurring') || '[]');
-  let customCategories = JSON.parse(localStorage.getItem('cal_custom_categories') || '[]');
-  let theme = JSON.parse(localStorage.getItem('cal_theme') || '{}');
-  let settings = JSON.parse(localStorage.getItem('cal_settings') || '{}');
-  let monthPhotos = JSON.parse(localStorage.getItem('cal_monthPhotos') || '{}');
-  let deferredPrompt = null;
-  let randomTimer = null;
-  let lastClockSec = -1;
-
-  let activeStyles = { bold: false, italic: false, strike: false };
-
-  if (!settings.photoMode) settings.photoMode = 'monthly';
-  if (!settings.randomInterval) settings.randomInterval = 30;
-  if (!settings.scale) settings.scale = 100;
-  if (settings.use24Hour === undefined) settings.use24Hour = false;
-  if (settings.autoMarkPast === undefined) settings.autoMarkPast = false;
-  if (!settings.language) settings.language = 'en';
-
-  /* MULTI-LANGUAGE DICTIONARIES */
-  const i18n = {
-    en: {
-      searchPlaceholder: "🔍 Search notes, emojis or date...",
-      searchBtn: "Search",
-      todayBtn: "📍 Today",
-      weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-      addEventBtn: "+ Add Event",
-      closeFormBtn: "Close Form",
-      markDay: "Mark Day",
-      unmarkDay: "Unmark",
-      notePlaceholder: "Add note or event…",
-      emojiPlaceholder: "Emoji",
-      saveEventBtn: "Save Event / Note",
-      catDefault: "💛 Default / Gold",
-      catImportant: "💜 Important / Purple",
-      catUrgent: "❤️ Urgent / Red",
-      catWork: "💙 Work / Cyan",
-      catPersonal: "💚 Personal / Green",
-      catFamily: "🧡 Family / Orange",
-      catSpecial: "💖 Special / Pink",
-      catFitness: "🟦 Fitness / Blue",
-      catManage: "⚙️ Manage / Create Custom Category...",
-      catNamePlaceholder: "Category Name (e.g. Hobbies)",
-      saveBtn: "Save",
-      repNone: "Don't repeat",
-      repDaily: "Repeat daily",
-      repWeekly: "Repeat weekly",
-      repFortnightly: "Repeat fortnightly",
-      repYearly: "Repeat yearly",
-      lblLanguage: "Language",
-      lblThemes: "Quick Themes (12 Presets)",
-      lblPreferences: "Preferences",
-      lbl24Hour: "24-Hour Time Format",
-      lblAutoMark: "Auto Mark Past Days",
-      lblDataSafety: "Data Safety & Export",
-      btnBackup: "📥 Backup (JSON)",
-      btnRestore: "📤 Restore (JSON)",
-      btnIcs: "📅 Export to .ics (iCal)",
-      lblCustomColors: "Custom Colors",
-      colAccent: "Accent",
-      colToday: "Today",
-      colMark: "Mark",
-      colEvent: "Event / Badge",
-      colBorder: "Day Border",
-      colDayText: "Day Text",
-      colDayBg: "Day Background",
-      colMuted: "Muted Text",
-      lblFontLibrary: "Font Library (40+ Fonts)",
-      lblUiScale: "UI Scale",
-      lblZoom: "Zoom",
-      lblPhotoSettings: "Month Photo Settings",
-      modeMonthly: "Monthly",
-      modeRandom: "Random",
-      modeCustom: "Custom",
-      lblInterval: "Change interval",
-      btnUploadPhoto: "📷 Upload Custom Photo",
-      btnRemovePhoto: "🗑️ Remove Custom Photo",
-      btnInstall: "Install as App",
-      btnReset: "Reset All Styles",
-      noMatches: "No matching dates or notes found.",
-      selectDay: "Select a day",
-      repeatsDaily: "Repeats daily",
-      repeatsWeekly: "Repeats weekly",
-      repeatsFortnightly: "Repeats fortnightly",
-      repeatsYearly: "Repeats every year"
-    },
-    tl: {
-      searchPlaceholder: "🔍 Maghanap ng mga tala, emoji o petsa...",
-      searchBtn: "Hanapin",
-      todayBtn: "📍 Ngayon",
-      weekdays: ["Lin", "Lun", "Mar", "Miy", "Huw", "Biy", "Sab"],
-      addEventBtn: "+ Magdagdag ng Kaganapan",
-      closeFormBtn: "Isara ang Porma",
-      markDay: "Markahan ang Araw",
-      unmarkDay: "Alisin ang Marka",
-      notePlaceholder: "Magdagdag ng tala o kaganapan…",
-      emojiPlaceholder: "Emoji",
-      saveEventBtn: "I-save ang Kaganapan / Tala",
-      catDefault: "💛 Default / Ginto",
-      catImportant: "💜 Mahalaga / Lila",
-      catUrgent: "❤️ Apurahang / Pula",
-      catWork: "💙 Trabaho / Siyan",
-      catPersonal: "💚 Personal / Berde",
-      catFamily: "🧡 Pamilya / Kahel",
-      catSpecial: "💖 Espesyal / Pink",
-      catFitness: "🟦 Fitness / Asul",
-      catManage: "⚙️ Pamahalaan / Gumawa ng Sariling Kategorya...",
-      catNamePlaceholder: "Pangalan ng Kategorya (hal. Libangan)",
-      saveBtn: "I-save",
-      repNone: "Huwag ulitin",
-      repDaily: "Ulitin araw-araw",
-      repWeekly: "Ulitin linggu-linggo",
-      repFortnightly: "Ulitin tuwing dalawang linggo",
-      repYearly: "Ulitin taon-taon",
-      lblLanguage: "Wika",
-      lblThemes: "Mabilis na Tema (12 Preset)",
-      lblPreferences: "Mga Kagustuhan",
-      lbl24Hour: "24-Oras na Orasan",
-      lblAutoMark: "Awtomatikong Markahan ang Nakaraang Araw",
-      lblDataSafety: "Kaligtasan ng Datos & I-export",
-      btnBackup: "📥 Backup (JSON)",
-      btnRestore: "📤 Ibalik (JSON)",
-      btnIcs: "📅 I-export sa .ics (iCal)",
-      lblCustomColors: "Mga Sariling Kulay",
-      colAccent: "Accent",
-      colToday: "Ngayon",
-      colMark: "Marka",
-      colEvent: "Kaganapan / Badge",
-      colBorder: "Hangganan ng Araw",
-      colDayText: "Teksto ng Araw",
-      colDayBg: "Background ng Araw",
-      colMuted: "Muted na Teksto",
-      lblFontLibrary: "Silid-aklatan ng Font (40+ Font)",
-      lblUiScale: "Laki ng UI",
-      lblZoom: "Zoom",
-      lblPhotoSettings: "Mga Setting ng Larawan sa Buwan",
-      modeMonthly: "Buwanan",
-      modeRandom: "Random",
-      modeCustom: "Sarili",
-      lblInterval: "Baguhin ang agwat",
-      btnUploadPhoto: "📷 Mag-upload ng Sariling Larawan",
-      btnRemovePhoto: "🗑️ Alisin ang Sariling Larawan",
-      btnInstall: "I-install Bilang App",
-      btnReset: "I-reset ang Lahat ng Estilo",
-      noMatches: "Walang nakitang tumutugmang petsa o tala.",
-      selectDay: "Pumili ng araw",
-      repeatsDaily: "Ulitin araw-araw",
-      repeatsWeekly: "Ulitin linggu-linggo",
-      repeatsFortnightly: "Ulitin tuwing dalawang linggo",
-      repeatsYearly: "Ulitin bawat taon"
-    },
-    no: {
-      searchPlaceholder: "🔍 Søk etter notater, emojier eller dato...",
-      searchBtn: "Søk",
-      todayBtn: "📍 I dag",
-      weekdays: ["Søn", "Man", "Tir", "Ons", "Tor", "Fre", "Lør"],
-      addEventBtn: "+ Legg til hendelse",
-      closeFormBtn: "Lukk skjema",
-      markDay: "Marker dag",
-      unmarkDay: "Fjern markering",
-      notePlaceholder: "Legg til notat eller hendelse…",
-      emojiPlaceholder: "Emoji",
-      saveEventBtn: "Lagre hendelse / notat",
-      catDefault: "💛 Standard / Gull",
-      catImportant: "💜 Viktig / Lilla",
-      catUrgent: "❤️ Haster / Rød",
-      catWork: "💙 Arbeid / Cyan",
-      catPersonal: "💚 Personlig / Grønn",
-      catFamily: "🧡 Familie / Oransje",
-      catSpecial: "💖 Spesiell / Rosa",
-      catFitness: "🟦 Trening / Blå",
-      catManage: "⚙️ Administrer / Lag egendefinert kategori...",
-      catNamePlaceholder: "Kategorinavn (f.eks. Hobbyer)",
-      saveBtn: "Lagre",
-      repNone: "Ikke gjenta",
-      repDaily: "Gjenta daglig",
-      repWeekly: "Gjenta ukentlig",
-      repFortnightly: "Gjenta annenhver uke",
-      repYearly: "Gjenta årlig",
-      lblLanguage: "Språk",
-      lblThemes: "Hurtigtemaer (12 Forhåndsinnstillinger)",
-      lblPreferences: "Preferanser",
-      lbl24Hour: "24-timers tidsformat",
-      lblAutoMark: "Automatisk marker tidligere dager",
-      lblDataSafety: "Datasikkerhet og Eksport",
-      btnBackup: "📥 Sikkerhetskopi (JSON)",
-      btnRestore: "📤 Gjenopprett (JSON)",
-      btnIcs: "📅 Eksporter til .ics (iCal)",
-      lblCustomColors: "Egendefinerte farger",
-      colAccent: "Aksent",
-      colToday: "I dag",
-      colMark: "Markør",
-      colEvent: "Hendelse / Merke",
-      colBorder: "Dagsgrense",
-      colDayText: "Dagstext",
-      colDayBg: "Dagsbakgrunn",
-      colMuted: "Dempet tekst",
-      lblFontLibrary: "Skriftbibliotek (40+ Skrifter)",
-      lblUiScale: "UI Skala",
-      lblZoom: "Zoom",
-      lblPhotoSettings: "Månedlig fotoinnstillinger",
-      modeMonthly: "Månedlig",
-      modeRandom: "Tilfeldig",
-      modeCustom: "Egendefinert",
-      lblInterval: "Endringsintervall",
-      btnUploadPhoto: "📷 Last opp egendefinert bilde",
-      btnRemovePhoto: "🗑️ Fjern egendefinert bilde",
-      btnInstall: "Installer som app",
-      btnReset: "Tilbakestill alle stiler",
-      noMatches: "Ingen matchende datoer eller notater funnet.",
-      selectDay: "Velg en dag",
-      repeatsDaily: "Gjentas daglig",
-      repeatsWeekly: "Gjentas ukentlig",
-      repeatsFortnightly: "Gjentas annenhver uke",
-      repeatsYearly: "Gjentas hvert år"
-    }
-  };
-
-  function t(key){
-    const lang = settings.language || 'en';
-    return i18n[lang][key] || i18n['en'][key] || key;
-  }
-
-  function applyLanguageStrings(){
-    document.getElementById('searchBox').placeholder = t('searchPlaceholder');
-    document.getElementById('searchBtn').textContent = t('searchBtn');
-    document.getElementById('todayBtn').textContent = t('todayBtn');
-    
-    const weekdaysEl = document.getElementById('weekdaysGrid');
-    const wDays = t('weekdays');
-    weekdaysEl.innerHTML = wDays.map(d => `<div>${d}</div>`).join('');
-
-    const toggleBtn = document.getElementById('toggleFormBtn');
-    if (!toggleBtn.classList.contains('active')) {
-      toggleBtn.textContent = t('addEventBtn');
-    } else {
-      toggleBtn.textContent = t('closeFormBtn');
-    }
-
-    const markBtn = document.getElementById('markBtn');
-    const k = key(selected);
-    markBtn.textContent = marks[k] ? t('unmarkDay') : t('markDay');
-
-    document.getElementById('noteText').placeholder = t('notePlaceholder');
-    document.getElementById('noteEmoji').placeholder = t('emojiPlaceholder');
-    document.getElementById('addNoteBtn').textContent = t('saveEventBtn');
-    document.getElementById('customCatName').placeholder = t('catNamePlaceholder');
-    document.getElementById('saveCustomCatBtn').textContent = t('saveBtn');
-
-    document.querySelector('option[value="#fdcb6e"]').textContent = t('catDefault');
-    document.querySelector('option[value="#6c5ce7"]').textContent = t('catImportant');
-    document.querySelector('option[value="#ff7675"]').textContent = t('catUrgent');
-    document.querySelector('option[value="#00cec9"]').textContent = t('catWork');
-    document.querySelector('option[value="#00b894"]').textContent = t('catPersonal');
-    document.querySelector('option[value="#e17055"]').textContent = t('catFamily');
-    document.querySelector('option[value="#e84393"]').textContent = t('catSpecial');
-    document.querySelector('option[value="#74b9ff"]').textContent = t('catFitness');
-    document.querySelector('option[value="__NEW__"]').textContent = t('catManage');
-
-    document.querySelector('option[value="none"]').textContent = t('repNone');
-    document.querySelector('option[value="daily"]').textContent = t('repDaily');
-    document.querySelector('option[value="weekly"]').textContent = t('repWeekly');
-    document.querySelector('option[value="fortnightly"]').textContent = t('repFortnightly');
-    document.querySelector('option[value="yearly"]').textContent = t('repYearly');
-
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-      const keyName = el.getAttribute('data-i18n');
-      if (i18n[settings.language][keyName]) {
-        el.textContent = i18n[settings.language][keyName];
-      }
-    });
-
-    document.getElementById('languageSelect').value = settings.language;
-  }
-
-  function getLocalizedDateString(dateObj, options){
-    const langMap = { en: 'en-US', tl: 'fil-PH', no: 'nb-NO' };
-    const locale = langMap[settings.language] || 'en-US';
-    return dateObj.toLocaleDateString(locale, options);
-  }
-
-  function getLocalizedTimeString(dateObj){
-    const langMap = { en: 'en-US', tl: 'fil-PH', no: 'nb-NO' };
-    const locale = langMap[settings.language] || 'en-US';
-    return dateObj.toLocaleTimeString(locale, {
-      hour12: !settings.use24Hour,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  }
-
-  function getContrastYIQ(hexcolor){
-    if(!hexcolor || hexcolor.charAt(0) !== '#') return '#ffffff';
-    let hex = hexcolor.replace('#', '');
-    if(hex.length === 3) hex = hex.split('').map(c => c + c).join('');
-    const r = parseInt(hex.substr(0,2),16);
-    const g = parseInt(hex.substr(2,2),16);
-    const b = parseInt(hex.substr(4,2),16);
-    const yiq = ((r*299)+(g*587)+(b*114))/1000;
-    return (yiq >= 140) ? '#111111' : '#ffffff';
-  }
-
-  function key(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
-  function monthKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
-  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
-
-  function save(){
-    try {
-      localStorage.setItem('cal_marks', JSON.stringify(marks));
-      localStorage.setItem('cal_notes', JSON.stringify(notes));
-      localStorage.setItem('cal_recurring', JSON.stringify(recurring));
-      localStorage.setItem('cal_custom_categories', JSON.stringify(customCategories));
-      localStorage.setItem('cal_theme', JSON.stringify(theme));
-      localStorage.setItem('cal_settings', JSON.stringify(settings));
-      localStorage.setItem('cal_monthPhotos', JSON.stringify(monthPhotos));
-    } catch (e) {
-      console.warn("Storage quota reached. Compressed photo may be too large.", e);
-    }
-  }
-
-  function applyTheme(){
-    const tTheme = {
-      accent:'#6c5ce7', today:'#00cec9', mark:'#ff7675', event:'#fdcb6e',
-      border:'#2a2a35', dayText:'#e8e8ed', dayBg:'#16161e', muted:'#8b8b9a',
-      font: "Poppins, sans-serif", ...theme
-    };
-
-    const accentTextColor = getContrastYIQ(tTheme.accent);
-    const todayTextColor = getContrastYIQ(tTheme.today);
-    const eventTextColor = getContrastYIQ(tTheme.event);
-
-    document.documentElement.style.setProperty('--accent', tTheme.accent);
-    document.documentElement.style.setProperty('--accent-text', accentTextColor);
-    document.documentElement.style.setProperty('--today', tTheme.today);
-    document.documentElement.style.setProperty('--today-text', todayTextColor);
-    document.documentElement.style.setProperty('--mark', tTheme.mark);
-    document.documentElement.style.setProperty('--event', tTheme.event);
-    document.documentElement.style.setProperty('--event-text', eventTextColor);
-    document.documentElement.style.setProperty('--day-border', tTheme.border);
-    document.documentElement.style.setProperty('--day-text', tTheme.dayText);
-    document.documentElement.style.setProperty('--day-bg', tTheme.dayBg);
-    document.documentElement.style.setProperty('--muted', tTheme.muted);
-    document.documentElement.style.setProperty('--font', tTheme.font);
-
-    const header = document.querySelector('.header');
-    if (header) header.style.background = `linear-gradient(135deg, ${tTheme.accent}, color-mix(in srgb, ${tTheme.accent} 65%, #a29bfe))`;
-
-    document.getElementById('cAccent').value = tTheme.accent;
-    document.getElementById('cToday').value = tTheme.today;
-    document.getElementById('cMark').value = tTheme.mark;
-    document.getElementById('cEvent').value = tTheme.event;
-    document.getElementById('cBorder').value = tTheme.border;
-    document.getElementById('cDayText').value = tTheme.dayText;
-    document.getElementById('cDayBg').value = tTheme.dayBg;
-    document.getElementById('cMuted').value = tTheme.muted;
-    document.getElementById('fontSelect').value = tTheme.font;
-  }
-
-  function applyScale(){
-    const s = settings.scale || 100;
-    document.documentElement.style.setProperty('--scale', s/100);
-    document.getElementById('scaleSlider').value = s;
-    document.getElementById('scaleVal').textContent = s + '%';
-  }
-
-  function loadMonthPhoto(){
-    const mk = monthKey(current);
-    const img = document.getElementById('monthPhoto');
-    clearInterval(randomTimer);
-
-    if (settings.photoMode === 'custom' && monthPhotos[mk]) {
-      img.src = monthPhotos[mk];
-      return;
-    }
-    if (settings.photoMode === 'random') {
-      img.src = `https://picsum.photos/800/400?random=${Date.now()}`;
-      randomTimer = setInterval(() => {
-        img.src = `https://picsum.photos/800/400?random=${Date.now()}`;
-      }, (settings.randomInterval || 30) * 1000);
-      return;
-    }
-    const seed = current.getFullYear() * 100 + (current.getMonth() + 1);
-    img.src = `https://picsum.photos/seed/${seed}/800/400`;
-  }
-
-  function renderCustomCategoriesUI(){
-    const select = document.getElementById('eventCategory');
-    const existingCustoms = select.querySelectorAll('.custom-opt');
-    existingCustoms.forEach(opt => opt.remove());
-
-    const newOpt = select.querySelector('option[value="__NEW__"]');
-
-    customCategories.forEach((cat, idx) => {
-      const opt = document.createElement('option');
-      opt.value = cat.color;
-      opt.textContent = `${cat.emoji || '📌'} ${cat.name}`;
-      opt.className = 'custom-opt';
-      select.insertBefore(opt, newOpt);
-    });
-
-    const listContainer = document.getElementById('customCatList');
-    listContainer.innerHTML = '';
-    customCategories.forEach((cat, idx) => {
-      const item = document.createElement('div');
-      item.className = 'cat-item';
-      item.innerHTML = `
-        <div class="cat-item-info">
-          <span class="cat-item-color" style="background:${cat.color}"></span>
-          <span>${cat.emoji || '📌'} ${cat.name}</span>
-        </div>
-        <button class="delete-cat-btn" data-idx="${idx}" title="Delete Category">×</button>
-      `;
-      listContainer.appendChild(item);
-    });
-
-    listContainer.querySelectorAll('.delete-cat-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const index = parseInt(e.target.dataset.idx, 10);
-        customCategories.splice(index, 1);
-        save();
-        renderCustomCategoriesUI();
-      });
-    });
-  }
-
-  function getNotesForDate(date){
-    const k = key(date);
-    const list = notes[k] ? [...notes[k]] : [];
-    const targetTime = new Date(date);
-    targetTime.setHours(0, 0, 0, 0);
-
-    recurring.forEach(r => {
-      let isMatch = false;
-
-      if (r.repeat === 'daily') {
-        const startDate = new Date(r.startDate || r.date || targetTime);
-        startDate.setHours(0, 0, 0, 0);
-        if (targetTime >= startDate) {
-          isMatch = true;
-        }
-      } else if (r.repeat === 'weekly' || r.repeat === 'fortnightly') {
-        const startDate = new Date(r.startDate || r.date || targetTime);
-        startDate.setHours(0, 0, 0, 0);
-        if (targetTime >= startDate) {
-          const diffTime = targetTime - startDate;
-          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-          const intervalDays = r.repeat === 'fortnightly' ? 14 : 7;
-          if (diffDays % intervalDays === 0) {
-            isMatch = true;
-          }
-        }
-      } else {
-        if (r.month === date.getMonth()+1 && r.day === date.getDate()) {
-          isMatch = true;
-        }
-      }
-
-      if (isMatch) {
-        if (!list.find(n => n.id === r.id)) {
-          list.push({ ...r, recurring: true });
-        }
-      }
-    });
-
-    list.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
-    return list;
-  }
-
-  function createDayCell(date, isOtherMonth){
-    const cell = document.createElement('div');
-    const k = key(date);
-    const todayStr = key(new Date());
-    const selStr = key(selected);
-
-    cell.className = 'day';
-    if (isOtherMonth) cell.classList.add('other-month');
-    if (k === todayStr) cell.classList.add('today');
-    if (k === selStr) cell.classList.add('selected');
-
-    if (marks[k]) {
-      cell.classList.add('marked');
-      if (typeof marks[k] === 'string') {
-        cell.style.setProperty('--mark-color', marks[k]);
-      }
-    }
-
-    if (settings.autoMarkPast && k < todayStr && !marks[k]) {
-      cell.classList.add('marked');
-      cell.style.setProperty('--mark-color', 'var(--muted)');
-    }
-
-    const dayNotes = getNotesForDate(date);
-    let emojiDisplay = '';
-    const firstEmojiNote = dayNotes.find(n => n.emoji);
-    if (firstEmojiNote) {
-      emojiDisplay = firstEmojiNote.emoji;
-    }
-
-    cell.innerHTML = `
-      <div class="day-num">${date.getDate()}</div>
-      ${emojiDisplay ? `<div class="day-emoji">${emojiDisplay}</div>` : ''}
-      ${dayNotes.length > 0 ? `<div class="day-badge">${dayNotes.length}</div>` : ''}
-    `;
-
-    cell.addEventListener('click', () => {
-      selected = new Date(date);
-      if (date.getMonth() !== current.getMonth()) {
-        current = new Date(date.getFullYear(), date.getMonth(), 1);
-      }
-      render();
-    });
-
-    return cell;
-  }
-
-  /* HIGH-PRECISION SMOOTH CLOCK LOOP */
-  function startSmoothClock(){
-    function tick(){
-      const now = new Date();
-      const seconds = now.getSeconds();
-
-      if (seconds !== lastClockSec) {
-        lastClockSec = seconds;
-        document.getElementById('clock').textContent = getLocalizedTimeString(now);
-        document.getElementById('fullDate').textContent = getLocalizedDateString(now, {
-          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-        });
-      }
-      requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-  }
-
-  function render(){
-    const year = current.getFullYear(), month = current.getMonth();
-    document.getElementById('monthYear').textContent = getLocalizedDateString(current, { month: 'long', year: 'numeric' });
-
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month+1, 0).getDate();
-    const daysInPrev = new Date(year, month, 0).getDate();
-
-    const grid = document.getElementById('daysGrid');
-    grid.innerHTML = '';
-
-    for (let i = firstDay-1; i >= 0; i--) {
-      grid.appendChild(createDayCell(new Date(year, month-1, daysInPrev - i), true));
-    }
-    for (let d = 1; d <= daysInMonth; d++) {
-      grid.appendChild(createDayCell(new Date(year, month, d), false));
-    }
-    const remaining = 42 - grid.children.length;
-    for (let d = 1; d <= remaining; d++) {
-      grid.appendChild(createDayCell(new Date(year, month+1, d), true));
-    }
-
-    updatePanel();
-    loadMonthPhoto();
-    updatePhotoUI();
-    renderCustomCategoriesUI();
-  }
-
-  function formatTextSpan(text, styles){
-    let css = [];
-    if (styles?.bold) css.push('font-weight: bold;');
-    if (styles?.italic) css.push('font-style: italic;');
-    if (styles?.strike) css.push('text-decoration: line-through;');
-    
-    return `<span style="${css.join(' ')}">${text}</span>`;
-  }
-
-  function formatDisplayTime(timeStr) {
-    if (!timeStr) return '';
-    if (settings.use24Hour) return timeStr;
-    let [h, m] = timeStr.split(':');
-    let hNum = parseInt(h, 10);
-    let ampm = hNum >= 12 ? 'PM' : 'AM';
-    hNum = hNum % 12 || 12;
-    return `${hNum}:${m} ${ampm}`;
-  }
-
-  function updatePanel(){
-    const k = key(selected);
-    document.getElementById('panelDate').textContent = getLocalizedDateString(selected, {
-      weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
-    });
-
-    const markBtn = document.getElementById('markBtn');
-    const markPicker = document.getElementById('markColorPicker');
-
-    if (marks[k]) {
-      markBtn.classList.add('active');
-      markBtn.textContent = t('unmarkDay');
-      if (typeof marks[k] === 'string') {
-        markPicker.value = marks[k];
-      }
-    } else {
-      markBtn.classList.remove('active');
-      markBtn.textContent = t('markDay');
-    }
-
-    const list = document.getElementById('eventList');
-    list.innerHTML = '';
-    const dayNotes = getNotesForDate(selected);
-
-    dayNotes.forEach(n => {
-      const li = document.createElement('li');
-      li.className = `event-item ${n.completed ? 'completed' : ''}`;
-      
-      const formattedText = formatTextSpan(n.text, n.styles);
-      const formattedTime = n.time ? `<span class="event-time">${formatDisplayTime(n.time)}</span>` : '';
-      
-      let repeatLabel = '';
-      if (n.repeat === 'daily') repeatLabel = `<div class="event-recurring">${t('repeatsDaily')}</div>`;
-      else if (n.repeat === 'weekly') repeatLabel = `<div class="event-recurring">${t('repeatsWeekly')}</div>`;
-      else if (n.repeat === 'fortnightly') repeatLabel = `<div class="event-recurring">${t('repeatsFortnightly')}</div>`;
-      else if (n.repeat === 'yearly' || n.recurring) repeatLabel = `<div class="event-recurring">${t('repeatsYearly')}</div>`;
-
-      li.innerHTML = `
-        <input type="checkbox" ${n.completed ? 'checked' : ''} data-id="${n.id}" title="Toggle Completed">
-        <div class="event-text">
-          ${n.emoji ? `<span class="event-emoji">${n.emoji}</span>` : ''}
-          ${formattedTime}
-          <span style="border-left: 3px solid ${n.categoryColor || 'var(--event)'}; padding-left: 6px;">${formattedText}</span>
-          ${repeatLabel}
-        </div>
-        <button class="delete-event" data-id="${n.id}">×</button>`;
-      list.appendChild(li);
-    });
-
-    list.querySelectorAll('input[type="checkbox"]').forEach(chk => {
-      chk.addEventListener('change', (e) => {
-        const id = chk.dataset.id;
-        const targetList = notes[k] || [];
-        const note = targetList.find(n => n.id === id) || recurring.find(r => r.id === id);
-        if (note) {
-          note.completed = e.target.checked;
-          save();
-          render();
-        }
-      });
-    });
-
-    list.querySelectorAll('.delete-event').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.dataset.id;
-        if (notes[k]) {
-          notes[k] = notes[k].filter(n => n.id !== id);
-          if (!notes[k].length) delete notes[k];
-        }
-        recurring = recurring.filter(r => r.id !== id);
-        save();
-        render();
-      });
-    });
-  }
-
-  function executeSearch(){
-    const query = document.getElementById('searchBox').value.toLowerCase().trim();
-    const resultsContainer = document.getElementById('searchResults');
-    resultsContainer.innerHTML = '';
-    if (!query) return;
-
-    const matches = [];
-
-    Object.keys(notes).forEach(dateStr => {
-      notes[dateStr].forEach(n => {
-        if (dateStr.includes(query) || n.text.toLowerCase().includes(query) || (n.emoji && n.emoji.includes(query))) {
-          matches.push({ date: new Date(dateStr + 'T00:00:00'), text: n.text, emoji: n.emoji || '' });
-        }
-      });
-    });
-
-    recurring.forEach(r => {
-      if (r.text.toLowerCase().includes(query) || (r.emoji && r.emoji.includes(query))) {
-        let matchDate = new Date(current.getFullYear(), (r.month || 1) - 1, r.day || 1);
-        if (r.startDate) {
-          matchDate = new Date(r.startDate);
-        }
-        matches.push({ date: matchDate, text: r.text + ` (${r.repeat || 'recurring'})`, emoji: r.emoji || '' });
-      }
-    });
-
-    if (matches.length === 0) {
-      resultsContainer.innerHTML = `<div class="search-item">${t('noMatches')}</div>`;
-      return;
-    }
-
-    matches.slice(0, 8).forEach(m => {
-      const item = document.createElement('div');
-      item.className = 'search-item';
-      item.innerHTML = `<span><strong>${getLocalizedDateString(m.date, {month:'short', day:'numeric', year:'numeric'})}</strong>: ${m.emoji} ${m.text}</span>`;
-      item.addEventListener('click', () => {
-        selected = new Date(m.date);
-        current = new Date(m.date.getFullYear(), m.date.getMonth(), 1);
-        resultsContainer.innerHTML = '';
-        document.getElementById('searchBox').value = '';
-        render();
-      });
-      resultsContainer.appendChild(item);
-    });
-  }
-
-  /* SWIPE GESTURES FOR MONTH NAVIGATION */
-  let touchStartX = 0;
-  const gridEl = document.getElementById('daysGrid');
-
-  gridEl.addEventListener('touchstart', e => {
-    touchStartX = e.changedTouches[0].screenX;
-  }, {passive: true});
-
-  gridEl.addEventListener('touchend', e => {
-    let touchEndX = e.changedTouches[0].screenX;
-    if (touchStartX - touchEndX > 50) {
-      document.getElementById('nextMonth').click();
-    } else if (touchEndX - touchStartX > 50) {
-      document.getElementById('prevMonth').click();
-    }
-  }, {passive: true});
-
-  /* TOGGLE NOTE CREATION FORM */
-  const toggleFormBtn = document.getElementById('toggleFormBtn');
-  const noteForm = document.getElementById('noteForm');
-
-  toggleFormBtn.addEventListener('click', () => {
-    noteForm.classList.toggle('open');
-    toggleFormBtn.classList.toggle('active', noteForm.classList.contains('open'));
-    toggleFormBtn.textContent = noteForm.classList.contains('open') ? t('closeFormBtn') : t('addEventBtn');
-  });
-
-  /* TEXT FORMATTING TOGGLES */
-  function setupTextStyleButtons(){
-    const bBtn = document.getElementById('btnBold');
-    const iBtn = document.getElementById('btnItalic');
-    const sBtn = document.getElementById('btnStrike');
-
-    bBtn.addEventListener('click', () => {
-      activeStyles.bold = !activeStyles.bold;
-      bBtn.classList.toggle('active', activeStyles.bold);
-    });
-
-    iBtn.addEventListener('click', () => {
-      activeStyles.italic = !activeStyles.italic;
-      iBtn.classList.toggle('active', activeStyles.italic);
-    });
-
-    sBtn.addEventListener('click', () => {
-      activeStyles.strike = !activeStyles.strike;
-      sBtn.classList.toggle('active', activeStyles.strike);
-    });
-  }
-
-  /* CUSTOM CATEGORIES HANDLER */
-  document.getElementById('eventCategory').addEventListener('change', (e) => {
-    const box = document.getElementById('customCatBox');
-    if (e.target.value === '__NEW__') {
-      box.classList.add('open');
-    } else {
-      box.classList.remove('open');
-    }
-  });
-
-  document.getElementById('saveCustomCatBtn').addEventListener('click', () => {
-    const emojiInput = document.getElementById('customCatEmoji');
-    const nameInput = document.getElementById('customCatName');
-    const colorInput = document.getElementById('customCatColor');
-    
-    const emoji = emojiInput.value.trim() || '📌';
-    const name = nameInput.value.trim();
-    const color = colorInput.value;
-
-    if (!name) return;
-
-    customCategories.push({ name, emoji, color });
-    save();
-    renderCustomCategoriesUI();
-
-    document.getElementById('eventCategory').value = color;
-    nameInput.value = '';
-    emojiInput.value = '';
-  });
-
-  /* LANGUAGE SELECTOR HANDLER */
-  document.getElementById('languageSelect').addEventListener('change', (e) => {
-    settings.language = e.target.value;
-    save();
-    applyLanguageStrings();
-    render();
-  });
-
-  /* EMOJI FILTER FOR INPUT FIELDS */
-  document.getElementById('noteEmoji').addEventListener('input', (e) => {
-    const emojis = e.target.value.match(/\p{Extended_Pictographic}/gu);
-    e.target.value = emojis ? emojis.join('') : '';
-  });
-
-  document.getElementById('customCatEmoji').addEventListener('input', (e) => {
-    const emojis = e.target.value.match(/\p{Extended_Pictographic}/gu);
-    e.target.value = emojis ? emojis.join('') : '';
-  });
-
-  document.getElementById('searchBtn').addEventListener('click', executeSearch);
-  document.getElementById('searchBox').addEventListener('keyup', () => executeSearch());
-
-  document.getElementById('todayBtn').addEventListener('click', () => {
-    const now = new Date();
-    current = new Date(now.getFullYear(), now.getMonth(), 1);
-    selected = new Date(now);
-    render();
-  });
-
-  document.getElementById('prevMonth').addEventListener('click', () => {
-    current.setMonth(current.getMonth()-1); render();
-  });
-  document.getElementById('nextMonth').addEventListener('click', () => {
-    current.setMonth(current.getMonth()+1); render();
-  });
-
-  document.getElementById('markBtn').addEventListener('click', () => {
-    const k = key(selected);
-    const color = document.getElementById('markColorPicker').value;
-    if (marks[k]) {
-      delete marks[k];
-    } else {
-      marks[k] = color;
-    }
-    save(); render();
-  });
-
-  document.getElementById('markColorPicker').addEventListener('input', (e) => {
-    const k = key(selected);
-    if (marks[k]) {
-      marks[k] = e.target.value;
-      save(); render();
-    }
-  });
-
-  document.getElementById('addNoteBtn').addEventListener('click', () => {
-    const text = document.getElementById('noteText').value.trim();
-    if (!text) return;
-    const time = document.getElementById('noteTime').value;
-    const emoji = document.getElementById('noteEmoji').value.trim();
-    let categoryColor = document.getElementById('eventCategory').value;
-    if (categoryColor === '__NEW__') categoryColor = '#fdcb6e';
-
-    const repeatVal = document.getElementById('noteRepeat').value;
-    const id = uid();
-    const styles = { ...activeStyles };
-
-    if (repeatVal !== 'none') {
-      const startDate = new Date(selected);
-      startDate.setHours(0, 0, 0, 0);
-      recurring.push({
-        id, text, time, emoji, categoryColor, styles, completed: false,
-        repeat: repeatVal,
-        startDate: startDate.toISOString(),
-        month: selected.getMonth()+1,
-        day: selected.getDate()
-      });
-    } else {
-      const k = key(selected);
-      if (!notes[k]) notes[k] = [];
-      notes[k].push({ id, text, time, emoji, categoryColor, styles, completed: false });
-    }
-
-    document.getElementById('noteText').value = '';
-    document.getElementById('noteTime').value = '';
-    document.getElementById('noteEmoji').value = '';
-    document.getElementById('noteRepeat').value = 'none';
-
-    activeStyles = { bold: false, italic: false, strike: false };
-    document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
-
-    noteForm.classList.remove('open');
-    toggleFormBtn.classList.remove('active');
-    toggleFormBtn.textContent = t('addEventBtn');
-
-    save();
-    render();
-  });
-
-  document.getElementById('settingsBtn').addEventListener('click', () => {
-    document.getElementById('settingsPanel').classList.toggle('open');
-  });
-
-  /* SETUP TOGGLE SWITCHES */
-  const timeFormatToggle = document.getElementById('timeFormatToggle');
-  timeFormatToggle.checked = settings.use24Hour;
-  timeFormatToggle.addEventListener('change', e => {
-    settings.use24Hour = e.target.checked;
-    save();
-  });
-
-  const autoMarkPastToggle = document.getElementById('autoMarkPastToggle');
-  autoMarkPastToggle.checked = settings.autoMarkPast;
-  autoMarkPastToggle.addEventListener('change', e => {
-    settings.autoMarkPast = e.target.checked;
-    save();
-    render();
-  });
-
-  /* DATA BACKUP & RESTORE & ICAL EXPORT */
-  document.getElementById('exportJsonBtn').addEventListener('click', () => {
-    const data = { marks, notes, recurring, customCategories, theme, settings, monthPhotos };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `calendar_backup_${key(new Date())}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  });
-
-  document.getElementById('importJsonBtn').addEventListener('click', () => {
-    document.getElementById('importJsonInput').click();
-  });
-
-  document.getElementById('importJsonInput').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const imported = JSON.parse(reader.result);
-        if (imported.marks) marks = imported.marks;
-        if (imported.notes) notes = imported.notes;
-        if (imported.recurring) recurring = imported.recurring;
-        if (imported.customCategories) customCategories = imported.customCategories;
-        if (imported.theme) theme = imported.theme;
-        if (imported.settings) settings = imported.settings;
-        if (imported.monthPhotos) monthPhotos = imported.monthPhotos;
-        save();
-        applyTheme();
-        applyScale();
-        applyLanguageStrings();
-        render();
-        alert('Data imported successfully!');
-      } catch (err) {
-        alert('Invalid JSON backup file.');
+  <script>
+    let current = new Date();
+    let selected = new Date();
+    let lastClockSec = -1;
+    let randomTimer = null;
+    let deferredPrompt = null;
+
+    let marks = JSON.parse(localStorage.getItem('cal_marks') || '{}');
+    let notes = JSON.parse(localStorage.getItem('cal_notes') || '{}');
+    let recurring = JSON.parse(localStorage.getItem('cal_recurring') || '[]');
+    let customCategories = JSON.parse(localStorage.getItem('cal_custom_categories') || '[]');
+    let monthPhotos = JSON.parse(localStorage.getItem('cal_monthPhotos') || '{}');
+
+    let theme = JSON.parse(localStorage.getItem('cal_theme') || JSON.stringify({
+      bg: "#0f0f13", card: "#16161e", text: "#e8e8ed", muted: "#8b8b9a", accent: "#6c5ce7", today: "#00cec9", mark: "#ff7675", event: "#fdcb6e", border: "#2a2a35"
+    }));
+
+    let settings = JSON.parse(localStorage.getItem('cal_settings') || JSON.stringify({
+      language: "en", use24Hour: false, autoMarkPast: true, scale: 100, font: "'Plus Jakarta Sans', sans-serif", photoMode: "monthly", randomInterval: 30
+    }));
+
+    let activeStyles = { bold: false, italic: false, strike: false };
+
+    const i18n = {
+      en: {
+        searchPlaceholder: "🔍 Search notes, emoji, date...",
+        searchBtn: "Search",
+        todayBtn: "📍 Today",
+        weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+        addEventBtn: "+ Add",
+        closeFormBtn: "Close",
+        markDay: "Mark Day",
+        unmarkDay: "Unmark Day",
+        notePlaceholder: "Add note or event…",
+        timeTitle: "Optional Event Time",
+        emojiPlaceholder: "Emoji",
+        catDefault: "💛 Default / Gold",
+        catImportant: "💜 Important / Purple",
+        catUrgent: "❤️ Urgent / Red",
+        catWork: "💙 Work / Cyan",
+        catPersonal: "💚 Personal / Green",
+        catFamily: "🧡 Family / Orange",
+        catSpecial: "💖 Special / Pink",
+        catFitness: "🟦 Fitness / Blue",
+        catManage: "⚙️ Manage / Create Custom Category...",
+        repNone: "Don't repeat",
+        repDaily: "Repeat daily",
+        repWeekly: "Repeat weekly",
+        repFortnightly: "Repeat fortnightly",
+        repYearly: "Repeat yearly",
+        catNamePlaceholder: "Category Name (e.g. Hobbies)",
+        saveBtn: "Save",
+        saveEventBtn: "Save Event / Note",
+        lblLanguage: "Language",
+        lblThemes: "Quick Themes (12 Presets)",
+        lblPreferences: "Preferences",
+        lbl24Hour: "24-Hour Time Format",
+        lblAutoMark: "Auto Mark Past Days",
+        lblDataSafety: "Data Safety & Export",
+        btnBackup: "📥 Backup (JSON)",
+        btnRestore: "📤 Restore (JSON)",
+        btnIcs: "📅 Export to .ics (iCal)",
+        lblCustomColors: "Custom Colors",
+        colAccent: "Accent",
+        colToday: "Today",
+        colMark: "Mark",
+        colEvent: "Event / Badge",
+        colBorder: "Day Border",
+        colDayText: "Day Text",
+        colDayBg: "Day Background",
+        colMuted: "Muted Text",
+        lblFontLibrary: "Font Library (40+ Fonts)",
+        lblUiScale: "UI Scale",
+        lblZoom: "Zoom",
+        lblPhotoSettings: "Month Photo Settings",
+        modeMonthly: "Monthly",
+        modeRandom: "Random",
+        modeCustom: "Custom",
+        lblInterval: "Change interval",
+        btnUploadPhoto: "📷 Upload Custom Photo",
+        btnRemovePhoto: "🗑️ Remove Custom Photo",
+        btnInstall: "Install as App",
+        btnReset: "Reset All Styles",
+        settingsTitle: "Settings & Customization"
+      },
+      tl: {
+        searchPlaceholder: "🔍 Maghanap ng tala, emoji o petsa...",
+        searchBtn: "Hanapin",
+        todayBtn: "📍 Ngayon",
+        weekdays: ["Lin", "Lun", "Mar", "Miy", "Huw", "Biy", "Sab"],
+        addEventBtn: "+ Magdagdag",
+        closeFormBtn: "Isara",
+        markDay: "Markahan",
+        unmarkDay: "Alisin ang Marka",
+        notePlaceholder: "Magdagdag ng tala o kaganapan…",
+        timeTitle: "Opsyonal na Oras",
+        emojiPlaceholder: "Emoji",
+        catDefault: "💛 Default / Ginto",
+        catImportant: "💜 Mahalaga / Lila",
+        catUrgent: "❤️ Apurahan / Pula",
+        catWork: "💙 Trabaho / Cyan",
+        catPersonal: "💚 Personal / Berde",
+        catFamily: "🧡 Pamilya / Kahel",
+        catSpecial: "💖 Espesyal / Pink",
+        catFitness: "🟦 Fitness / Asul",
+        catManage: "⚙️ Pamahalaan ang Kategorya...",
+        repNone: "Huwag ulitin",
+        repDaily: "Ulitin araw-araw",
+        repWeekly: "Ulitin linggu-linggo",
+        repFortnightly: "Ulitin kada dalawang linggo",
+        repYearly: "Ulitin taon-taon",
+        catNamePlaceholder: "Pangalan ng Kategorya",
+        saveBtn: "I-save",
+        saveEventBtn: "I-save ang Tala",
+        lblLanguage: "Wika",
+        lblThemes: "Mga Tema",
+        lblPreferences: "Mga Kagustuhan",
+        lbl24Hour: "24-Oras na Format",
+        lblAutoMark: "Auto Mark sa Nakalipas",
+        lblDataSafety: "Seguridad ng Data",
+        btnBackup: "📥 Backup (JSON)",
+        btnRestore: "📤 Ibalik (JSON)",
+        btnIcs: "📅 I-export sa .ics",
+        lblCustomColors: "Mga Kulay",
+        colAccent: "Accent",
+        colToday: "Ngayon",
+        colMark: "Marka",
+        colEvent: "Kaganapan",
+        colBorder: "Hangganan",
+        colDayText: "Teksto ng Araw",
+        colDayBg: "Background",
+        colMuted: "Mapusyaw",
+        lblFontLibrary: "Font Library",
+        lblUiScale: "Laki ng UI",
+        lblZoom: "Zoom",
+        lblPhotoSettings: "Setting ng Larawan",
+        modeMonthly: "Buwanan",
+        modeRandom: "Random",
+        modeCustom: "Custom",
+        lblInterval: "Agwat ng oras",
+        btnUploadPhoto: "📷 Mag-upload ng Larawan",
+        btnRemovePhoto: "🗑️ Alisin ang Larawan",
+        btnInstall: "I-install bilang App",
+        btnReset: "I-reset ang Estilo",
+        settingsTitle: "Mga Setting at Estilo"
+      },
+      no: {
+        searchPlaceholder: "🔍 Søk etter notater, emoji eller dato...",
+        searchBtn: "Søk",
+        todayBtn: "📍 I dag",
+        weekdays: ["Søn", "Man", "Tir", "Ons", "Tor", "Fre", "Lør"],
+        addEventBtn: "+ Legg til",
+        closeFormBtn: "Lukk",
+        markDay: "Marker dag",
+        unmarkDay: "Fjern merke",
+        notePlaceholder: "Legg til notat eller hendelse…",
+        timeTitle: "Valgfri tid",
+        emojiPlaceholder: "Emoji",
+        catDefault: "💛 Standard / Gull",
+        catImportant: "💜 Viktig / Lilla",
+        catUrgent: "❤️ Haster / Rød",
+        catWork: "💙 Arbeid / Cyan",
+        catPersonal: "💚 Personlig / Grønn",
+        catFamily: "🧡 Familie / Oransje",
+        catSpecial: "💖 Spesial / Rosa",
+        catFitness: "🟦 Trening / Blå",
+        catManage: "⚙️ Administrer kategorier...",
+        repNone: "Ikke gjenta",
+        repDaily: "Gjenta daglig",
+        repWeekly: "Gjenta ukentlig",
+        repFortnightly: "Gjenta annenhver uke",
+        repYearly: "Gjenta årlig",
+        catNamePlaceholder: "Kategorinavn",
+        saveBtn: "Lagre",
+        saveEventBtn: "Lagre hendelse",
+        lblLanguage: "Språk",
+        lblThemes: "Hurtigtemaer",
+        lblPreferences: "Innstillinger",
+        lbl24Hour: "24-timers tidsformat",
+        lblAutoMark: "Marker fortid automatisk",
+        lblDataSafety: "Datasikkerhet",
+        btnBackup: "📥 Sikkerhetskopi (JSON)",
+        btnRestore: "📤 Gjenopprett (JSON)",
+        btnIcs: "📅 Eksporter til .ics",
+        lblCustomColors: "Tilpassede farger",
+        colAccent: "Aksent",
+        colToday: "I dag",
+        colMark: "Merke",
+        colEvent: "Hendelse",
+        colBorder: "Grense",
+        colDayText: "Dagtekst",
+        colDayBg: "Dagsbakgrunn",
+        colMuted: "Dempet tekst",
+        lblFontLibrary: "Skriftbibliotek",
+        lblUiScale: "UI-skala",
+        lblZoom: "Zoom",
+        lblPhotoSettings: "Månedlig bilde",
+        modeMonthly: "Månedlig",
+        modeRandom: "Tilfeldig",
+        modeCustom: "Tilpasset",
+        lblInterval: "Endringsintervall",
+        btnUploadPhoto: "📷 Last opp bilde",
+        btnRemovePhoto: "🗑️ Fjern bilde",
+        btnInstall: "Installer som app",
+        btnReset: "Tilbakestill stiler",
+        settingsTitle: "Innstillinger og tilpasning"
       }
     };
-    reader.readAsText(file);
-  });
 
-  document.getElementById('exportIcsBtn').addEventListener('click', () => {
-    let icsContent = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Desktop Calendar V12.1//EN\r\n";
-    
-    Object.keys(notes).forEach(dateStr => {
-      notes[dateStr].forEach(n => {
-        let cleanDate = dateStr.replace(/-/g, '');
-        icsContent += "BEGIN:VEVENT\r\n";
-        icsContent += `SUMMARY:${n.emoji ? n.emoji + ' ' : ''}${n.text}\r\n`;
-        icsContent += `DTSTART;VALUE=DATE:${cleanDate}\r\n`;
-        icsContent += "END:VEVENT\r\n";
+    const presets = [
+      { name: "Default Violet", bg: "#0f0f13", card: "#16161e", text: "#e8e8ed", muted: "#8b8b9a", accent: "#6c5ce7", today: "#00cec9", mark: "#ff7675", event: "#fdcb6e", border: "#2a2a35" },
+      { name: "Midnight Obsidian", bg: "#08080a", card: "#121216", text: "#f1f1f6", muted: "#7a7a8c", accent: "#0984e3", today: "#00b894", mark: "#d63031", event: "#e17055", border: "#22222c" },
+      { name: "Cyberpunk Neon", bg: "#0b0514", card: "#150a21", text: "#fff", muted: "#a29bfe", accent: "#fd79a8", today: "#55efc4", mark: "#ff7675", event: "#ffeaa7", border: "#341f97" },
+      { name: "Emerald Forest", bg: "#0a120e", card: "#111d17", text: "#e2f0d9", muted: "#7f9c87", accent: "#00b894", today: "#55efc4", mark: "#ff7675", event: "#fab1a0", border: "#1e392a" },
+      { name: "Sunset Crimson", bg: "#140a0a", card: "#211111", text: "#fbe8e8", muted: "#9c7f7f", accent: "#d63031", today: "#fab1a0", mark: "#e84393", event: "#fdcb6e", border: "#3d1c1c" },
+      { name: "Nordic Minimal", bg: "#f4f6f8", card: "#ffffff", text: "#2d3436", muted: "#636e72", accent: "#0984e3", today: "#00b894", mark: "#d63031", event: "#e17055", border: "#dfe6e9" },
+      { name: "Latte Warmth", bg: "#191512", card: "#241f1a", text: "#f4ede2", muted: "#a3978c", accent: "#e17055", today: "#fdcb6e", mark: "#fab1a0", event: "#ffeaa7", border: "#3b3129" },
+      { name: "Deep Ocean", bg: "#050b14", card: "#0a1324", text: "#e0f0ff", muted: "#7392b8", accent: "#0984e3", today: "#00cec9", mark: "#ff7675", event: "#74b9ff", border: "#183152" },
+      { name: "Sakura Blossom", bg: "#140c10", card: "#21141b", text: "#fceef5", muted: "#a88196", accent: "#e84393", today: "#fd79a8", mark: "#ff7675", event: "#ffeaa7", border: "#3b2230" },
+      { name: "Royal Gold", bg: "#0f0f0f", card: "#1a1a1a", text: "#fcf6bd", muted: "#9c9568", accent: "#f1c40f", today: "#e67e22", mark: "#e74c3c", event: "#f39c12", border: "#333333" },
+      { name: "Minty Fresh", bg: "#091410", card: "#10211a", text: "#e2fbe8", muted: "#7fb892", accent: "#00b894", today: "#55efc4", mark: "#ff7675", event: "#81ecec", border: "#1b382d" },
+      { name: "Pure Monochrome", bg: "#000000", card: "#111111", text: "#ffffff", muted: "#888888", accent: "#ffffff", today: "#aaaaaa", mark: "#ff4444", event: "#cccccc", border: "#333333" }
+    ];
+
+    const defaultPhotos = {
+      0: "https://images.unsplash.com/photo-1517840901100-8179e982acb7?auto=format&fit=crop&w=800&q=80",
+      1: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80",
+      2: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80",
+      3: "https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&w=800&q=80",
+      4: "https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=800&q=80",
+      5: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
+      6: "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80",
+      7: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
+      8: "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=800&q=80",
+      9: "https://images.unsplash.com/photo-1508873696983-2df5c92063c7?auto=format&fit=crop&w=800&q=80",
+      10: "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=800&q=80",
+      11: "https://images.unsplash.com/photo-1512389142860-9c449e58a543?auto=format&fit=crop&w=800&q=80"
+    };
+
+    const randomPhotoPool = [
+      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1426604966848-d7adac902bff?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1434725039720-aaad6dd32dfe?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=800&q=80"
+    ];
+
+    function initApp() {
+      setupLanguage();
+      setupThemes();
+      loadSettingsToUI();
+      applyThemeAndSettings();
+      updateClockAndDate();
+      setInterval(updateClockAndDate, 1000);
+      renderCalendar();
+      renderSelectedDay();
+      setupEventListeners();
+      setupServiceWorker();
+    }
+
+    function setupLanguage() {
+      const lang = settings.language || 'en';
+      document.getElementById('languageSelect').value = lang;
+      const dict = i18n[lang] || i18n.en;
+      
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (dict[key]) el.textContent = dict[key];
       });
-    });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (dict[key]) el.setAttribute('placeholder', dict[key]);
+      });
+      const searchBox = document.getElementById('searchBox');
+      if (searchBox && dict.searchPlaceholder) searchBox.setAttribute('placeholder', dict.searchPlaceholder);
+      
+      const weekdaysContainer = document.getElementById('weekdaysGrid');
+      if (weekdaysContainer && dict.weekdays) {
+        weekdaysContainer.innerHTML = dict.weekdays.map(d => `<div>${d}</div>`).join('');
+      }
+    }
 
-    icsContent += "END:VCALENDAR";
+    function setupThemes() {
+      const themeRow = document.getElementById('themeRow');
+      themeRow.innerHTML = presets.map((p, i) => `
+        <div class="theme-swatch" style="background: ${p.accent};" title="${p.name}" onclick="applyPreset(${i})"></div>
+      `).join('');
+    }
 
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `calendar_events.ics`;
-    a.click();
-    URL.revokeObjectURL(url);
-  });
-
-  const themeRow = document.getElementById('themeRow');
-  const presets = [
-    {name:'Purple',accent:'#6c5ce7',today:'#00cec9',mark:'#ff7675',event:'#fdcb6e',border:'#2a2a35',dayText:'#e8e8ed',dayBg:'#16161e',muted:'#8b8b9a'},
-    {name:'Ocean',accent:'#0984e3',today:'#00b894',mark:'#e17055',event:'#fdcb6e',border:'#1e3a5f',dayText:'#e8e8ed',dayBg:'#0f1c2e',muted:'#7a9bb8'},
-    {name:'Forest',accent:'#00b894',today:'#55efc4',mark:'#d63031',event:'#ffeaa7',border:'#1a3c34',dayText:'#e8e8ed',dayBg:'#0f2a24',muted:'#7aa89a'},
-    {name:'Sunset',accent:'#e17055',today:'#fdcb6e',mark:'#d63031',event:'#a29bfe',border:'#3d2a22',dayText:'#e8e8ed',dayBg:'#2a1a14',muted:'#b89a8a'},
-    {name:'Night',accent:'#636e72',today:'#74b9ff',mark:'#ff7675',event:'#a29bfe',border:'#2d3436',dayText:'#dfe6e9',dayBg:'#1e272e',muted:'#636e72'},
-    {name:'Rose',accent:'#e84393',today:'#fd79a8',mark:'#d63031',event:'#ffeaa7',border:'#3d1f2e',dayText:'#e8e8ed',dayBg:'#2a1520',muted:'#b87a9a'},
-    {name:'Neon Cyber',accent:'#00ffcc',today:'#ff007f',mark:'#ff0055',event:'#ffe600',border:'#1f1f3a',dayText:'#ffffff',dayBg:'#0b0c10',muted:'#66fcf1'},
-    {name:'Pastel Lavender',accent:'#b8c0ff',today:'#c8b6ff',mark:'#ffc6ff',event:'#ffd6a5',border:'#3c3b52',dayText:'#f1f1f1',dayBg:'#22223b',muted:'#9a8c98'},
-    {name:'Gold Luxury',accent:'#d4af37',today:'#f3e5ab',mark:'#e63946',event:'#f4a261',border:'#332d18',dayText:'#fefae0',dayBg:'#1a1810',muted:'#b5a366'},
-    {name:'Emerald',accent:'#2ec4b6',today:'#cbf3f0',mark:'#e71d36',event:'#ff9f1c',border:'#173d38',dayText:'#ffffff',dayBg:'#091e1c',muted:'#70a49e'},
-    {name:'Minimal Slate',accent:'#8a99ad',today:'#cbd5e1',mark:'#f87171',event:'#fbbf24',border:'#334155',dayText:'#f8fafc',dayBg:'#0f172a',muted:'#64748b'},
-    {name:'High Contrast',accent:'#ffff00',today:'#00ffff',mark:'#ff0000',event:'#ff00ff',border:'#444444',dayText:'#ffffff',dayBg:'#000000',muted:'#aaaaaa'}
-  ];
-
-  presets.forEach(p => {
-    const sw = document.createElement('div');
-    sw.className = 'theme-swatch';
-    sw.style.background = `linear-gradient(135deg, ${p.accent}, ${p.today})`;
-    sw.title = p.name;
-    sw.addEventListener('click', () => {
+    function applyPreset(index) {
+      const p = presets[index];
       theme = { ...p };
-      applyTheme(); save();
-    });
-    themeRow.appendChild(sw);
-  });
-
-  const colorMap = {
-    cAccent: 'accent', cToday: 'today', cMark: 'mark', cEvent: 'event',
-    cBorder: 'border', cDayText: 'dayText', cDayBg: 'dayBg', cMuted: 'muted'
-  };
-  Object.keys(colorMap).forEach(id => {
-    document.getElementById(id).addEventListener('input', e => {
-      theme[colorMap[id]] = e.target.value;
-      applyTheme(); save();
-    });
-  });
-
-  document.getElementById('fontSelect').addEventListener('change', e => {
-    theme.font = e.target.value;
-    applyTheme(); save();
-  });
-
-  document.getElementById('scaleSlider').addEventListener('input', e => {
-    settings.scale = +e.target.value;
-    applyScale(); save();
-  });
-
-  document.getElementById('resetTheme').addEventListener('click', () => {
-    theme = {};
-    applyTheme(); save();
-  });
-
-  function updatePhotoUI(){
-    document.querySelectorAll('.mode-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.mode === settings.photoMode);
-    });
-    document.getElementById('randomGroup').style.display = settings.photoMode === 'random' ? 'block' : 'none';
-    document.getElementById('intervalSlider').value = settings.randomInterval || 30;
-    document.getElementById('intervalVal').textContent = (settings.randomInterval || 30) + 's';
-    
-    const mk = monthKey(current);
-    const removePhotoBtn = document.getElementById('removeCustomPhotoBtn');
-    if (monthPhotos[mk]) {
-      removePhotoBtn.style.display = 'block';
-    } else {
-      removePhotoBtn.style.display = 'none';
+      saveTheme();
+      applyThemeAndSettings();
+      loadSettingsToUI();
     }
-  }
 
-  document.querySelectorAll('.mode-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      settings.photoMode = btn.dataset.mode;
-      updatePhotoUI(); save(); loadMonthPhoto();
-    });
-  });
+    function saveTheme() {
+      localStorage.setItem('cal_theme', JSON.stringify(theme));
+    }
 
-  document.getElementById('intervalSlider').addEventListener('input', e => {
-    settings.randomInterval = +e.target.value;
-    document.getElementById('intervalVal').textContent = settings.randomInterval + 's';
-    save(); loadMonthPhoto();
-  });
+    function saveSettings() {
+      localStorage.setItem('cal_settings', JSON.stringify(settings));
+    }
 
-  document.getElementById('uploadMonthBtn').addEventListener('click', () => {
-    document.getElementById('monthPhotoInput').click();
-  });
-  
-  /* COMPRESSED CANVAS IMAGE UPLOAD FIX */
-  document.getElementById('monthPhotoInput').addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (!file) return;
+    function applyThemeAndSettings() {
+      const root = document.documentElement;
+      if (theme.bg) root.style.setProperty('--bg', theme.bg);
+      if (theme.card) root.style.setProperty('--card', theme.card);
+      if (theme.text) root.style.setProperty('--text', theme.text);
+      if (theme.muted) root.style.setProperty('--muted', theme.muted);
+      if (theme.accent) root.style.setProperty('--accent', theme.accent);
+      if (theme.today) root.style.setProperty('--today', theme.today);
+      if (theme.mark) root.style.setProperty('--mark', theme.mark);
+      if (theme.event) root.style.setProperty('--event', theme.event);
+      if (theme.border) root.style.setProperty('--day-border', theme.border);
+      if (theme.dayText) root.style.setProperty('--day-text', theme.dayText);
+      if (theme.dayBg) root.style.setProperty('--day-bg', theme.dayBg);
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 800;
-        const MAX_HEIGHT = 400;
-        let width = img.width;
-        let height = img.height;
+      if (settings.font) {
+        root.style.setProperty('--font', settings.font);
+      }
+      if (settings.scale) {
+        root.style.setProperty('--scale', settings.scale / 100);
+      }
 
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
+      updateMonthPhoto();
+      updatePhotoControlsVisibility();
+    }
+
+    function loadSettingsToUI() {
+      if (theme.accent) document.getElementById('cAccent').value = theme.accent;
+      if (theme.today) document.getElementById('cToday').value = theme.today;
+      if (theme.mark) document.getElementById('cMark').value = theme.mark;
+      if (theme.event) document.getElementById('cEvent').value = theme.event;
+      if (theme.border) document.getElementById('cBorder').value = theme.border;
+      if (theme.dayText) document.getElementById('cDayText').value = theme.dayText;
+      if (theme.dayBg) document.getElementById('cDayBg').value = theme.dayBg;
+      if (theme.muted) document.getElementById('cMuted').value = theme.muted;
+
+      if (settings.font) document.getElementById('fontSelect').value = settings.font;
+      document.getElementById('timeFormatToggle').checked = !!settings.use24Hour;
+      document.getElementById('autoMarkPastToggle').checked = !!settings.autoMarkPast;
+      document.getElementById('scaleSlider').value = settings.scale || 100;
+      document.getElementById('scaleVal').textContent = (settings.scale || 100) + '%';
+      document.getElementById('intervalSlider').value = settings.randomInterval || 30;
+      document.getElementById('intervalVal').textContent = (settings.randomInterval || 30) + 's';
+
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-mode') === settings.photoMode);
+      });
+    }
+
+    function updateClockAndDate() {
+      const now = new Date();
+      if (now.getSeconds() !== lastClockSec) {
+        lastClockSec = now.getSeconds();
+        const hours = settings.use24Hour ? String(now.getHours()).padStart(2, '0') : String(now.getHours() % 12 || 12).padStart(2, '0');
+        const mins = String(now.getMinutes()).padStart(2, '0');
+        const secs = String(now.getSeconds()).padStart(2, '0');
+        const ampm = settings.use24Hour ? '' : (now.getHours() >= 12 ? ' PM' : ' AM');
+        document.getElementById('clock').textContent = `${hours}:${mins}:${secs}${ampm}`;
+      }
+
+      const lang = settings.language || 'en';
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('fullDate').textContent = now.toLocaleDateString(lang === 'tl' ? 'fil-PH' : lang === 'no' ? 'no-NO' : 'en-US', options);
+
+      if (settings.autoMarkPast) {
+        autoMarkPastDays(now);
+      }
+    }
+
+    function autoMarkPastDays(now) {
+      const todayStr = formatDateKey(now);
+      const yest = new Date(now);
+      yest.setDate(yest.getDate() - 1);
+      const yestStr = formatDateKey(yest);
+      if (!marks[yestStr]) {
+        marks[yestStr] = { marked: true, color: theme.mark || '#ff7675' };
+        localStorage.setItem('cal_marks', JSON.stringify(marks));
+      }
+    }
+
+    function formatDateKey(d) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function renderCalendar() {
+      const year = current.getFullYear();
+      const month = current.getMonth();
+      const lang = settings.language || 'en';
+      
+      const monthNames = lang === 'tl' 
+        ? ["Enero", "Pebrero", "Marso", "Abril", "Mayo", "Hunyo", "Hulyo", "Agosto", "Setyembre", "Oktubre", "Nobyembre", "Disyembre"]
+        : lang === 'no'
+        ? ["Januar", "Februar", "Mars", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Desember"]
+        : ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+      document.getElementById('monthYear').textContent = `${monthNames[month]} ${year}`;
+
+      const firstDayIndex = new Date(year, month, 1).getDay();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+      const prevTotalDays = new Date(year, month, 0).getDate();
+      const todayStr = formatDateKey(new Date());
+      const selectedStr = formatDateKey(selected);
+
+      let daysHTML = '';
+
+      for (let i = firstDayIndex - 1; i >= 0; i--) {
+        const dayNum = prevTotalDays - i;
+        const prevDate = new Date(year, month - 1, dayNum);
+        const dateStr = formatDateKey(prevDate);
+        daysHTML += renderDayCell(dayNum, dateStr, true, todayStr, selectedStr);
+      }
+
+      for (let i = 1; i <= totalDays; i++) {
+        const currDate = new Date(year, month, i);
+        const dateStr = formatDateKey(currDate);
+        daysHTML += renderDayCell(i, dateStr, false, todayStr, selectedStr);
+      }
+
+      const totalCellsPrinted = firstDayIndex + totalDays;
+      const nextDaysCount = totalCellsPrinted % 7 === 0 ? 0 : 7 - (totalCellsPrinted % 7);
+      for (let i = 1; i <= nextDaysCount; i++) {
+        const nextDate = new Date(year, month + 1, i);
+        const dateStr = formatDateKey(nextDate);
+        daysHTML += renderDayCell(i, dateStr, true, todayStr, selectedStr);
+      }
+
+      document.getElementById('daysGrid').innerHTML = daysHTML;
+      updateMonthPhoto();
+    }
+
+    function renderDayCell(num, dateStr, isOtherMonth, todayStr, selectedStr) {
+      const isToday = dateStr === todayStr;
+      const isSelected = dateStr === selectedStr;
+      const markObj = marks[dateStr];
+      const isMarked = markObj && markObj.marked;
+      const markColor = markObj && markObj.color ? markObj.color : '';
+
+      const dayNotes = (notes[dateStr] || []).filter(n => !n.completed);
+      const dayRecurring = getRecurringEventsForDate(dateStr);
+      const totalEvents = dayNotes.length + dayRecurring.length;
+
+      let displayEmoji = '';
+      if (dayNotes.length > 0 && dayNotes[0].emoji) displayEmoji = dayNotes[0].emoji;
+      else if (dayRecurring.length > 0 && dayRecurring[0].emoji) displayEmoji = dayRecurring[0].emoji;
+
+      let classes = 'day';
+      if (isOtherMonth) classes += ' other-month';
+      if (isToday) classes += ' today';
+      if (isSelected) classes += ' selected';
+      if (isMarked) classes += ' marked';
+
+      let styleAttr = '';
+      if (isMarked && markColor) {
+        styleAttr = `style="--mark-color: ${markColor};"`;
+      }
+
+      return `
+        <div class="${classes}" ${styleAttr} onclick="selectDate('${dateStr}')">
+          <div class="day-num">${num}</div>
+          ${displayEmoji ? `<div class="day-emoji">${displayEmoji}</div>` : ''}
+          ${totalEvents > 0 ? `<div class="day-badge">${totalEvents}</div>` : ''}
+        </div>
+      `;
+    }
+
+    function selectDate(dateStr) {
+      const parts = dateStr.split('-');
+      selected = new Date(parts[0], parts[1] - 1, parts[2]);
+      renderCalendar();
+      renderSelectedDay();
+    }
+
+    function renderSelectedDay() {
+      const dateStr = formatDateKey(selected);
+      const lang = settings.language || 'en';
+      const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+      document.getElementById('panelDate').textContent = selected.toLocaleDateString(lang === 'tl' ? 'fil-PH' : lang === 'no' ? 'no-NO' : 'en-US', options);
+
+      const markObj = marks[dateStr];
+      const isMarked = markObj && markObj.marked;
+      const markBtn = document.getElementById('markBtn');
+      const dict = i18n[lang] || i18n.en;
+
+      if (isMarked) {
+        markBtn.textContent = dict.unmarkDay || 'Unmark';
+        markBtn.classList.add('active');
+        if (markObj.color) document.getElementById('markColorPicker').value = markObj.color;
+      } else {
+        markBtn.textContent = dict.markDay || 'Mark Day';
+        markBtn.classList.remove('active');
+      }
+
+      renderEventsList(dateStr);
+    }
+
+    function getRecurringEventsForDate(dateStr) {
+      const d = new Date(dateStr);
+      const dayOfWeek = d.getDay();
+
+      return recurring.filter(rec => {
+        if (rec.frequency === 'daily') return true;
+        if (rec.frequency === 'weekly') {
+          const startD = new Date(rec.startDate);
+          return startD.getDay() === dayOfWeek && d >= startD;
+        }
+        if (rec.frequency === 'fortnightly') {
+          const startD = new Date(rec.startDate);
+          const diffTime = Math.abs(d - startD);
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          return startD.getDay() === dayOfWeek && diffDays % 14 === 0 && d >= startD;
+        }
+        if (rec.frequency === 'yearly') {
+          const startD = new Date(rec.startDate);
+          return startD.getDate() === d.getDate() && startD.getMonth() === d.getMonth() && d >= startD;
+        }
+        return false;
+      });
+    }
+
+    function renderEventsList(dateStr) {
+      const dayNotes = notes[dateStr] || [];
+      const dayRecurring = getRecurringEventsForDate(dateStr);
+      const listEl = document.getElementById('eventList');
+
+      let html = '';
+
+      dayNotes.forEach((note, index) => {
+        let formattedText = note.text;
+        if (note.bold) formattedText = `<b>${formattedText}</b>`;
+        if (note.italic) formattedText = `<i>${formattedText}</i>`;
+        if (note.strike) formattedText = `<s>${formattedText}</s>`;
+
+        html += `
+          <li class="event-item ${note.completed ? 'completed' : ''}" style="border-left: 3px solid ${note.category || '#fdcb6e'}; padding-left: 8px;">
+            <input type="checkbox" ${note.completed ? 'checked' : ''} onchange="toggleNoteComplete('${dateStr}', ${index})">
+            <div class="event-text">
+              ${note.time ? `<span class="event-time">${note.time}</span>` : ''}
+              ${note.emoji ? `<span class="event-emoji">${note.emoji}</span>` : ''}
+              <span>${formattedText}</span>
+            </div>
+            <button class="delete-event" onclick="deleteNote('${dateStr}', ${index})">×</button>
+          </li>
+        `;
+      });
+
+      dayRecurring.forEach((rec, index) => {
+        html += `
+          <li class="event-item" style="border-left: 3px solid ${rec.category || '#fdcb6e'}; padding-left: 8px;">
+            <div class="event-text">
+              ${rec.time ? `<span class="event-time">${rec.time}</span>` : ''}
+              ${rec.emoji ? `<span class="event-emoji">${rec.emoji}</span>` : ''}
+              <span>${rec.text}</span>
+              <div class="event-recurring">🔄 ${rec.frequency}</div>
+            </div>
+            <button class="delete-event" onclick="deleteRecurring(${rec.id})">×</button>
+          </li>
+        `;
+      });
+
+      if (html === '') {
+        html = `<div style="text-align: center; color: var(--muted); padding: 12px; font-size: 12px;">No events or notes for this day</div>`;
+      }
+
+      listEl.innerHTML = html;
+    }
+
+    function toggleNoteComplete(dateStr, index) {
+      if (notes[dateStr] && notes[dateStr][index]) {
+        notes[dateStr][index].completed = !notes[dateStr][index].completed;
+        localStorage.setItem('cal_notes', JSON.stringify(notes));
+        renderCalendar();
+        renderSelectedDay();
+      }
+    }
+
+    function deleteNote(dateStr, index) {
+      if (notes[dateStr]) {
+        notes[dateStr].splice(index, 1);
+        if (notes[dateStr].length === 0) delete notes[dateStr];
+        localStorage.setItem('cal_notes', JSON.stringify(notes));
+        renderCalendar();
+        renderSelectedDay();
+      }
+    }
+
+    function deleteRecurring(id) {
+      recurring = recurring.filter(r => r.id !== id);
+      localStorage.setItem('cal_recurring', JSON.stringify(recurring));
+      renderCalendar();
+      renderSelectedDay();
+    }
+
+    function updateMonthPhoto() {
+      const imgEl = document.getElementById('monthPhoto');
+      const mode = settings.photoMode || 'monthly';
+      const month = current.getMonth();
+
+      if (mode === 'monthly') {
+        if (monthPhotos[month]) {
+          imgEl.src = monthPhotos[month];
         } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
+          imgEl.src = defaultPhotos[month] || defaultPhotos[0];
+        }
+      } else if (mode === 'random') {
+        if (!imgEl.src || imgEl.src === window.location.href) {
+          imgEl.src = randomPhotoPool[Math.floor(Math.random() * randomPhotoPool.length)];
+        }
+      } else if (mode === 'custom') {
+        if (monthPhotos['custom']) {
+          imgEl.src = monthPhotos['custom'];
+        } else {
+          imgEl.src = defaultPhotos[month];
+        }
+      }
+    }
+
+    function updatePhotoControlsVisibility() {
+      const mode = settings.photoMode || 'monthly';
+      document.getElementById('randomGroup').style.display = mode === 'random' ? 'block' : 'none';
+      document.getElementById('removeCustomPhotoBtn').style.display = (monthPhotos['custom'] || monthPhotos[current.getMonth()]) ? 'block' : 'none';
+      
+      if (mode === 'random') {
+        startRandomPhotoTimer();
+      } else {
+        stopRandomPhotoTimer();
+      }
+    }
+
+    function startRandomPhotoTimer() {
+      stopRandomPhotoTimer();
+      const interval = (settings.randomInterval || 30) * 1000;
+      randomTimer = setInterval(() => {
+        const imgEl = document.getElementById('monthPhoto');
+        const randomUrl = randomPhotoPool[Math.floor(Math.random() * randomPhotoPool.length)];
+        imgEl.src = randomUrl;
+      }, interval);
+    }
+
+    function stopRandomPhotoTimer() {
+      if (randomTimer) {
+        clearInterval(randomTimer);
+        randomTimer = null;
+      }
+    }
+
+    function setupEventListeners() {
+      document.getElementById('prevMonth').addEventListener('click', () => {
+        current.setMonth(current.getMonth() - 1);
+        renderCalendar();
+      });
+
+      document.getElementById('nextMonth').addEventListener('click', () => {
+        current.setMonth(current.getMonth() + 1);
+        renderCalendar();
+      });
+
+      document.getElementById('todayBtn').addEventListener('click', () => {
+        current = new Date();
+        selected = new Date();
+        renderCalendar();
+        renderSelectedDay();
+      });
+
+      document.getElementById('settingsBtn').addEventListener('click', () => {
+        const panel = document.getElementById('settingsPanel');
+        panel.classList.toggle('open');
+      });
+
+      document.getElementById('toggleFormBtn').addEventListener('click', () => {
+        const form = document.getElementById('noteForm');
+        form.classList.toggle('open');
+        document.getElementById('toggleFormBtn').classList.toggle('active');
+      });
+
+      ['btnBold', 'btnItalic', 'btnStrike'].forEach(btnId => {
+        document.getElementById(btnId).addEventListener('click', (e) => {
+          const btn = e.currentTarget;
+          btn.classList.toggle('active');
+          if (btnId === 'btnBold') activeStyles.bold = btn.classList.contains('active');
+          if (btnId === 'btnItalic') activeStyles.italic = btn.classList.contains('active');
+          if (btnId === 'btnStrike') activeStyles.strike = btn.classList.contains('active');
+        });
+      });
+
+      document.getElementById('markBtn').addEventListener('click', () => {
+        const dateStr = formatDateKey(selected);
+        const color = document.getElementById('markColorPicker').value;
+        if (!marks[dateStr] || !marks[dateStr].marked) {
+          marks[dateStr] = { marked: true, color: color };
+        } else {
+          delete marks[dateStr];
+        }
+        localStorage.setItem('cal_marks', JSON.stringify(marks));
+        renderCalendar();
+        renderSelectedDay();
+      });
+
+      document.getElementById('markColorPicker').addEventListener('input', (e) => {
+        const dateStr = formatDateKey(selected);
+        if (marks[dateStr] && marks[dateStr].marked) {
+          marks[dateStr].color = e.target.value;
+          localStorage.setItem('cal_marks', JSON.stringify(marks));
+          renderCalendar();
+        }
+      });
+
+      document.getElementById('eventCategory').addEventListener('change', (e) => {
+        const val = e.target.value;
+        const box = document.getElementById('customCatBox');
+        if (val === '__NEW__') {
+          box.classList.add('open');
+          renderCustomCategoryList();
+        } else {
+          box.classList.remove('open');
+        }
+      });
+
+      document.getElementById('saveCustomCatBtn').addEventListener('click', () => {
+        const name = document.getElementById('customCatName').value.trim();
+        const emoji = document.getElementById('customCatEmoji').value.trim() || '✨';
+        const color = document.getElementById('customCatColor').value;
+        if (!name) return;
+
+        const newCat = { id: Date.now(), name, emoji, color };
+        customCategories.push(newCat);
+        localStorage.setItem('cal_custom_categories', JSON.stringify(customCategories));
+
+        document.getElementById('customCatName').value = '';
+        document.getElementById('customCatEmoji').value = '';
+        renderCustomCategoryList();
+        updateCategoryDropdown();
+      });
+
+      document.getElementById('addNoteBtn').addEventListener('click', () => {
+        const text = document.getElementById('noteText').value.trim();
+        if (!text) return;
+        const time = document.getElementById('noteTime').value;
+        const emoji = document.getElementById('noteEmoji').value.trim();
+        let category = document.getElementById('eventCategory').value;
+        const repeat = document.getElementById('noteRepeat').value;
+        const dateStr = formatDateKey(selected);
+
+        if (category === '__NEW__') category = '#6c5ce7';
+
+        const noteObj = {
+          text, time, emoji, category, bold: activeStyles.bold, italic: activeStyles.italic, strike: activeStyles.strike, completed: false
+        };
+
+        if (repeat === 'none') {
+          if (!notes[dateStr]) notes[dateStr] = [];
+          notes[dateStr].push(noteObj);
+          localStorage.setItem('cal_notes', JSON.stringify(notes));
+        } else {
+          const recObj = {
+            id: Date.now(),
+            startDate: dateStr,
+            frequency: repeat,
+            text, time, emoji, category
+          };
+          recurring.push(recObj);
+          localStorage.setItem('cal_recurring', JSON.stringify(recurring));
         }
 
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
+        document.getElementById('noteText').value = '';
+        document.getElementById('noteTime').value = '';
+        document.getElementById('noteEmoji').value = '';
+        document.getElementById('noteForm').classList.remove('open');
+        document.getElementById('toggleFormBtn').classList.remove('active');
 
-        // Compress down to JPEG format at 80% quality to avoid localStorage limits
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        renderCalendar();
+        renderSelectedDay();
+      });
 
-        const mk = monthKey(current);
-        monthPhotos[mk] = compressedDataUrl;
-        settings.photoMode = 'custom';
-        
-        document.getElementById('monthPhoto').src = compressedDataUrl;
-        updatePhotoUI(); 
-        save(); 
-        loadMonthPhoto();
-      };
-      img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
+      document.getElementById('searchBtn').addEventListener('click', performSearch);
+      document.getElementById('searchBox').addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') performSearch();
+      });
 
-  document.getElementById('removeCustomPhotoBtn').addEventListener('click', () => {
-    const mk = monthKey(current);
-    delete monthPhotos[mk];
-    settings.photoMode = 'monthly';
-    updatePhotoUI(); save(); loadMonthPhoto();
-  });
+      document.getElementById('languageSelect').addEventListener('change', (e) => {
+        settings.language = e.target.value;
+        saveSettings();
+        setupLanguage();
+        renderCalendar();
+        renderSelectedDay();
+      });
 
-  /* PWA INSTALL BUTTON & STANDALONE CHECK FIX */
-  const installBtn = document.getElementById('installBtn');
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      document.getElementById('timeFormatToggle').addEventListener('change', (e) => {
+        settings.use24Hour = e.target.checked;
+        saveSettings();
+      });
 
-  if (isStandalone) {
-    installBtn.style.display = 'none';
-  }
+      document.getElementById('autoMarkPastToggle').addEventListener('change', (e) => {
+        settings.autoMarkPast = e.target.checked;
+        saveSettings();
+      });
 
-  window.addEventListener('beforeinstallprompt', e => {
-    e.preventDefault();
-    deferredPrompt = e;
-    if (!isStandalone) {
-      installBtn.style.display = 'block';
+      document.getElementById('scaleSlider').addEventListener('input', (e) => {
+        settings.scale = parseInt(e.target.value);
+        document.getElementById('scaleVal').textContent = settings.scale + '%';
+        saveSettings();
+        applyThemeAndSettings();
+      });
+
+      document.getElementById('fontSelect').addEventListener('change', (e) => {
+        settings.font = e.target.value;
+        saveSettings();
+        applyThemeAndSettings();
+      });
+
+      const colorMap = { cAccent: 'accent', cToday: 'today', cMark: 'mark', cEvent: 'event', cBorder: 'border', cDayText: 'dayText', cDayBg: 'dayBg', cMuted: 'muted' };
+      Object.keys(colorMap).forEach(id => {
+        document.getElementById(id).addEventListener('input', (e) => {
+          theme[colorMap[id]] = e.target.value;
+          saveTheme();
+          applyThemeAndSettings();
+        });
+      });
+
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          settings.photoMode = e.currentTarget.getAttribute('data-mode');
+          saveSettings();
+          document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+          e.currentTarget.classList.add('active');
+          updatePhotoControlsVisibility();
+          updateMonthPhoto();
+        });
+      });
+
+      document.getElementById('intervalSlider').addEventListener('input', (e) => {
+        settings.randomInterval = parseInt(e.target.value);
+        document.getElementById('intervalVal').textContent = settings.randomInterval + 's';
+        saveSettings();
+        if (settings.photoMode === 'random') startRandomPhotoTimer();
+      });
+
+      document.getElementById('uploadMonthBtn').addEventListener('click', () => {
+        document.getElementById('monthPhotoInput').click();
+      });
+
+      document.getElementById('monthPhotoInput').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            const mode = settings.photoMode || 'monthly';
+            if (mode === 'custom') {
+              monthPhotos['custom'] = evt.target.result;
+            } else {
+              monthPhotos[current.getMonth()] = evt.target.result;
+            }
+            localStorage.setItem('cal_monthPhotos', JSON.stringify(monthPhotos));
+            updateMonthPhoto();
+            updatePhotoControlsVisibility();
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      document.getElementById('removeCustomPhotoBtn').addEventListener('click', () => {
+        const mode = settings.photoMode || 'monthly';
+        if (mode === 'custom') {
+          delete monthPhotos['custom'];
+        } else {
+          delete monthPhotos[current.getMonth()];
+        }
+        localStorage.setItem('cal_monthPhotos', JSON.stringify(monthPhotos));
+        updateMonthPhoto();
+        updatePhotoControlsVisibility();
+      });
+
+      document.getElementById('exportJsonBtn').addEventListener('click', () => {
+        const data = { marks, notes, recurring, customCategories, theme, settings, monthPhotos };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `calendar_backup_${formatDateKey(new Date())}.json`;
+        a.click();
+      });
+
+      document.getElementById('importJsonBtn').addEventListener('click', () => {
+        document.getElementById('importJsonInput').click();
+      });
+
+      document.getElementById('importJsonInput').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            try {
+              const data = JSON.parse(evt.target.result);
+              if (data.marks) marks = data.marks;
+              if (data.notes) notes = data.notes;
+              if (data.recurring) recurring = data.recurring;
+              if (data.customCategories) customCategories = data.customCategories;
+              if (data.theme) theme = data.theme;
+              if (data.settings) settings = data.settings;
+              if (data.monthPhotos) monthPhotos = data.monthPhotos;
+
+              localStorage.setItem('cal_marks', JSON.stringify(marks));
+              localStorage.setItem('cal_notes', JSON.stringify(notes));
+              localStorage.setItem('cal_recurring', JSON.stringify(recurring));
+              localStorage.setItem('cal_custom_categories', JSON.stringify(customCategories));
+              localStorage.setItem('cal_theme', JSON.stringify(theme));
+              localStorage.setItem('cal_settings', JSON.stringify(settings));
+              localStorage.setItem('cal_monthPhotos', JSON.stringify(monthPhotos));
+
+              loadSettingsToUI();
+              setupLanguage();
+              applyThemeAndSettings();
+              renderCalendar();
+              renderSelectedDay();
+              alert('Data restored successfully!');
+            } catch (err) {
+              alert('Invalid JSON backup file.');
+            }
+          };
+          reader.readAsText(file);
+        }
+      });
+
+      document.getElementById('exportIcsBtn').addEventListener('click', () => {
+        let icsContent = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Desktop Calendar V12.1//EN\n";
+        Object.keys(notes).forEach(dateStr => {
+          notes[dateStr].forEach(note => {
+            const dClean = dateStr.replace(/-/g, '');
+            icsContent += "BEGIN:VEVENT\n";
+            icsContent += `SUMMARY:${note.text}\n`;
+            icsContent += `DTSTART;VALUE=DATE:${dClean}\n`;
+            icsContent += `DTEND;VALUE=DATE:${dClean}\n`;
+            icsContent += "END:VEVENT\n";
+          });
+        });
+        icsContent += "END:VCALENDAR";
+
+        const blob = new Blob([icsContent], { type: 'text/calendar' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `calendar_events_${formatDateKey(new Date())}.ics`;
+        a.click();
+      });
+
+      document.getElementById('resetTheme').addEventListener('click', () => {
+        if (confirm('Reset all custom themes and settings?')) {
+          localStorage.clear();
+          location.reload();
+        }
+      });
     }
-  });
 
-  window.addEventListener('appinstalled', () => {
-    installBtn.style.display = 'none';
-    deferredPrompt = null;
-  });
+    function performSearch() {
+      const query = document.getElementById('searchBox').value.toLowerCase().trim();
+      const resultsEl = document.getElementById('searchResults');
+      if (!query) {
+        resultsEl.innerHTML = '';
+        return;
+      }
 
-  installBtn.addEventListener('click', async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      installBtn.style.display = 'none';
+      let matches = [];
+      Object.keys(notes).forEach(dateStr => {
+        notes[dateStr].forEach(note => {
+          if (note.text.toLowerCase().includes(query) || (note.emoji && note.emoji.includes(query)) || dateStr.includes(query)) {
+            matches.push({ dateStr, text: note.text, emoji: note.emoji || '' });
+          }
+        });
+      });
+
+      let html = '';
+      matches.forEach(m => {
+        html += `
+          <div class="search-item" onclick="jumpToDate('${m.dateStr}')">
+            <span>${m.emoji} ${m.text}</span>
+            <span style="color: var(--muted); font-size: 11px;">${m.dateStr}</span>
+          </div>
+        `;
+      });
+
+      if (html === '') {
+        html = `<div style="text-align: center; color: var(--muted); padding: 10px; font-size: 12px;">No results found</div>`;
+      }
+      resultsEl.innerHTML = html;
     }
-    deferredPrompt = null;
-  });
 
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').then(reg => reg.update()).catch(() => {});
-  }
+    function jumpToDate(dateStr) {
+      const parts = dateStr.split('-');
+      current = new Date(parts[0], parts[1] - 1, parts[2]);
+      selected = new Date(parts[0], parts[1] - 1, parts[2]);
+      renderCalendar();
+      renderSelectedDay();
+      document.getElementById('searchResults').innerHTML = '';
+      document.getElementById('searchBox').value = '';
+    }
 
-  setupTextStyleButtons();
-  applyTheme();
-  applyScale();
-  applyLanguageStrings();
-  updatePhotoUI();
-  startSmoothClock();
-  render();
-</script>
+    function updateCategoryDropdown() {
+      const select = document.getElementById('eventCategory');
+      let html = `
+        <option value="#fdcb6e">💛 Default / Gold</option>
+        <option value="#6c5ce7">💜 Important / Purple</option>
+        <option value="#ff7675">❤️ Urgent / Red</option>
+        <option value="#00cec9">💙 Work / Cyan</option>
+        <option value="#00b894">💚 Personal / Green</option>
+        <option value="#e17055">🧡 Family / Orange</option>
+        <option value="#e84393">💖 Special / Pink</option>
+        <option value="#74b9ff">🟦 Fitness / Blue</option>
+      `;
+      customCategories.forEach(cat => {
+        html += `<option value="${cat.color}">${cat.emoji} ${cat.name}</option>`;
+      });
+      html += `<option value="__NEW__">⚙️ Manage / Create Custom Category...</option>`;
+      select.innerHTML = html;
+    }
+
+    function renderCustomCategoryList() {
+      const listEl = document.getElementById('customCatList');
+      let html = '';
+      customCategories.forEach((cat, idx) => {
+        html += `
+          <div class="cat-item">
+            <div class="cat-item-info">
+              <span class="cat-item-color" style="background: ${cat.color};"></span>
+              <span>${cat.emoji} ${cat.name}</span>
+            </div>
+            <button class="delete-cat-btn" onclick="deleteCustomCategory(${idx})">×</button>
+          </div>
+        `;
+      });
+      listEl.innerHTML = html;
+    }
+
+    function deleteCustomCategory(index) {
+      customCategories.splice(index, 1);
+      localStorage.setItem('cal_custom_categories', JSON.stringify(customCategories));
+      renderCustomCategoryList();
+      updateCategoryDropdown();
+    }
+
+    function setupServiceWorker() {
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        const installBtn = document.getElementById('installBtn');
+        installBtn.style.display = 'block';
+        installBtn.addEventListener('click', () => {
+          installBtn.style.display = 'none';
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then(() => {
+            deferredPrompt = null;
+          });
+        });
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
 </body>
 </html>
