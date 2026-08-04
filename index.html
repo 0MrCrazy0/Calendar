@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-title" content="Calendar">
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%236c5ce7'/%3E%3Ctext y='.9em' font-size='70' x='50%25' text-anchor='middle' fill='white'%3E📅%3C/text%3E%3C/svg%3E">
 
-  <title>Desktop Calendar V12</title>
+  <title>Desktop Calendar V12.1</title>
   <link rel="manifest" href="manifest.json">
 
   <!-- Google Fonts Preconnect -->
@@ -1153,7 +1153,7 @@
       <button class="reset-btn" id="resetTheme" data-i18n="btnReset">Reset All Styles</button>
     </div>
 
-    <div class="footer">• Desktop Calendar V12 •</div>
+    <div class="footer">• Desktop Calendar V12.1 •</div>
   </div>
 
 <script>
@@ -1467,13 +1467,17 @@
   function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
   function save(){
-    localStorage.setItem('cal_marks', JSON.stringify(marks));
-    localStorage.setItem('cal_notes', JSON.stringify(notes));
-    localStorage.setItem('cal_recurring', JSON.stringify(recurring));
-    localStorage.setItem('cal_custom_categories', JSON.stringify(customCategories));
-    localStorage.setItem('cal_theme', JSON.stringify(theme));
-    localStorage.setItem('cal_settings', JSON.stringify(settings));
-    localStorage.setItem('cal_monthPhotos', JSON.stringify(monthPhotos));
+    try {
+      localStorage.setItem('cal_marks', JSON.stringify(marks));
+      localStorage.setItem('cal_notes', JSON.stringify(notes));
+      localStorage.setItem('cal_recurring', JSON.stringify(recurring));
+      localStorage.setItem('cal_custom_categories', JSON.stringify(customCategories));
+      localStorage.setItem('cal_theme', JSON.stringify(theme));
+      localStorage.setItem('cal_settings', JSON.stringify(settings));
+      localStorage.setItem('cal_monthPhotos', JSON.stringify(monthPhotos));
+    } catch (e) {
+      console.warn("Storage quota reached. Compressed photo may be too large.", e);
+    }
   }
 
   function applyTheme(){
@@ -1526,7 +1530,6 @@
     const img = document.getElementById('monthPhoto');
     clearInterval(randomTimer);
 
-    // If a custom photo exists for this month, use it when photoMode is custom OR fallback nicely
     if (settings.photoMode === 'custom' && monthPhotos[mk]) {
       img.src = monthPhotos[mk];
       return;
@@ -2101,7 +2104,7 @@
   });
 
   document.getElementById('exportIcsBtn').addEventListener('click', () => {
-    let icsContent = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Desktop Calendar V12//EN\r\n";
+    let icsContent = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Desktop Calendar V12.1//EN\r\n";
     
     Object.keys(notes).forEach(dateStr => {
       notes[dateStr].forEach(n => {
@@ -2212,16 +2215,51 @@
     document.getElementById('monthPhotoInput').click();
   });
   
+  /* COMPRESSED CANVAS IMAGE UPLOAD FIX */
   document.getElementById('monthPhotoInput').addEventListener('change', e => {
     const file = e.target.files[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onload = (event) => {
-      const imgElement = document.getElementById('monthPhoto');
-      imgElement.src = event.target.result;
-      monthPhotos[monthKey(current)] = event.target.result;
-      settings.photoMode = 'custom';
-      updatePhotoUI(); save(); loadMonthPhoto();
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 400;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Compress down to JPEG format at 80% quality to avoid localStorage limits
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+
+        const mk = monthKey(current);
+        monthPhotos[mk] = compressedDataUrl;
+        settings.photoMode = 'custom';
+        
+        document.getElementById('monthPhoto').src = compressedDataUrl;
+        updatePhotoUI(); 
+        save(); 
+        loadMonthPhoto();
+      };
+      img.src = event.target.result;
     };
     reader.readAsDataURL(file);
   });
