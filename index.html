@@ -971,14 +971,14 @@
 
     <!-- Global & Date Search Bar -->
     <div class="search-bar">
-      <input id="searchBox" type="text" placeholder="🔍 Search notes, emojis or date (e.g. 15 Aug)...">
-      <button id="searchBtn">Search</button>
+      <input id="searchBox" type="text" placeholder="🔍 Search notes, emojis or date...">
+      <button id="searchBtn" data-i18n="searchBtn">Search</button>
       <button id="todayBtn" title="Return to current day">📍 Today</button>
     </div>
     <div id="searchResults"></div>
 
     <!-- Weekday Headers -->
-    <div class="weekdays">
+    <div class="weekdays" id="weekdaysGrid">
       <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
     </div>
 
@@ -1012,22 +1012,22 @@
           <input type="text" id="noteEmoji" placeholder="Emoji" maxlength="8" title="Paste one or multiple emojis">
           
           <select id="eventCategory" title="Event Category / Color">
-            <option value="#fdcb6e">💛 Default / Gold</option>
-            <option value="#6c5ce7">💜 Important / Purple</option>
-            <option value="#ff7675">❤️ Urgent / Red</option>
-            <option value="#00cec9">💙 Work / Cyan</option>
-            <option value="#00b894">💚 Personal / Green</option>
-            <option value="#e17055">🧡 Family / Orange</option>
-            <option value="#e84393">💖 Special / Pink</option>
-            <option value="#74b9ff">🟦 Fitness / Blue</option>
-            <option value="__NEW__">⚙️ Manage / Create Custom Category...</option>
+            <option value="#fdcb6e" data-i18n="catDefault">💛 Default / Gold</option>
+            <option value="#6c5ce7" data-i18n="catImportant">💜 Important / Purple</option>
+            <option value="#ff7675" data-i18n="catUrgent">❤️ Urgent / Red</option>
+            <option value="#00cec9" data-i18n="catWork">💙 Work / Cyan</option>
+            <option value="#00b894" data-i18n="catPersonal">💚 Personal / Green</option>
+            <option value="#e17055" data-i18n="catFamily">🧡 Family / Orange</option>
+            <option value="#e84393" data-i18n="catSpecial">💖 Special / Pink</option>
+            <option value="#74b9ff" data-i18n="catFitness">🟦 Fitness / Blue</option>
+            <option value="__NEW__" data-i18n="catManage">⚙️ Manage / Create Custom Category...</option>
           </select>
           <select id="noteRepeat" title="Repeat Frequency">
-          <option value="none">Don't repeat</option>
-          <option value="daily">Repeat daily</option>
-          <option value="weekly">Repeat weekly</option>
-          <option value="fortnightly">Repeat fortnightly</option>
-          <option value="yearly">Repeat yearly</option>
+            <option value="none" data-i18n="repNone">Don't repeat</option>
+            <option value="daily" data-i18n="repDaily">Repeat daily</option>
+            <option value="weekly" data-i18n="repWeekly">Repeat weekly</option>
+            <option value="fortnightly" data-i18n="repFortnightly">Repeat fortnightly</option>
+            <option value="yearly" data-i18n="repYearly">Repeat yearly</option>
           </select>
         </div>
 
@@ -1035,14 +1035,14 @@
         <div class="custom-cat-box" id="customCatBox">
           <div class="custom-cat-inputs">
             <input type="text" id="customCatEmoji" placeholder="✨" maxlength="4" title="Category Emoji">
-            <input type="text" id="customCatName" placeholder="Category Name (e.g. Hobbies)">
+            <input type="text" id="customCatName" placeholder="Category Name (e.g. Hobbies)" data-i18n-placeholder="catNamePlaceholder">
             <input type="color" id="customCatColor" value="#a29bfe">
-            <button type="button" id="saveCustomCatBtn">Save</button>
+            <button type="button" id="saveCustomCatBtn" data-i18n="saveBtn">Save</button>
           </div>
           <div class="custom-cat-list" id="customCatList"></div>
         </div>
 
-        <button class="add-note-btn" id="addNoteBtn">Save Event / Note</button>
+        <button class="add-note-btn" id="addNoteBtn" data-i18n="saveEventBtn">Save Event / Note</button>
       </div>
 
       <!-- Events List Displayed Below Header/Hidden Section -->
@@ -1051,46 +1051,55 @@
 
     <!-- Settings Menu Drawer -->
     <div class="settings" id="settingsPanel">
-      <h3>Quick Themes (12 Presets)</h3>
+      <h3 data-i18n="lblLanguage">Language</h3>
+      <div class="font-select">
+        <select id="languageSelect">
+          <option value="en">English</option>
+          <option value="tl">Tagalog</option>
+          <option value="no">Norsk (Norwegian)</option>
+        </select>
+      </div>
+
+      <h3 data-i18n="lblThemes">Quick Themes (12 Presets)</h3>
       <div class="theme-row" id="themeRow"></div>
 
-      <h3>Preferences</h3>
+      <h3 data-i18n="lblPreferences">Preferences</h3>
       <div class="toggle-row">
-        <label for="timeFormatToggle">24-Hour Time Format</label>
+        <label for="timeFormatToggle" data-i18n="lbl24Hour">24-Hour Time Format</label>
         <label class="switch">
           <input type="checkbox" id="timeFormatToggle">
           <span class="slider"></span>
         </label>
       </div>
       <div class="toggle-row">
-        <label for="autoMarkPastToggle">Auto Mark Past Days</label>
+        <label for="autoMarkPastToggle" data-i18n="lblAutoMark">Auto Mark Past Days</label>
         <label class="switch">
           <input type="checkbox" id="autoMarkPastToggle">
           <span class="slider"></span>
         </label>
       </div>
 
-      <h3>Data Safety & Export</h3>
+      <h3 data-i18n="lblDataSafety">Data Safety & Export</h3>
       <div class="data-btns">
-        <button class="action-setting-btn" id="exportJsonBtn">📥 Backup (JSON)</button>
-        <button class="action-setting-btn" id="importJsonBtn">📤 Restore (JSON)</button>
+        <button class="action-setting-btn" id="exportJsonBtn" data-i18n="btnBackup">📥 Backup (JSON)</button>
+        <button class="action-setting-btn" id="importJsonBtn" data-i18n="btnRestore">📤 Restore (JSON)</button>
       </div>
-      <button class="action-setting-btn" id="exportIcsBtn">📅 Export to .ics (iCal)</button>
+      <button class="action-setting-btn" id="exportIcsBtn" data-i18n="btnIcs">📅 Export to .ics (iCal)</button>
       <input type="file" id="importJsonInput" accept=".json">
 
-      <h3>Custom Colors</h3>
+      <h3 data-i18n="lblCustomColors">Custom Colors</h3>
       <div class="color-pickers">
-        <div class="picker-group"><label>Accent</label><input type="color" id="cAccent" value="#6c5ce7"></div>
-        <div class="picker-group"><label>Today</label><input type="color" id="cToday" value="#00cec9"></div>
-        <div class="picker-group"><label>Mark</label><input type="color" id="cMark" value="#ff7675"></div>
-        <div class="picker-group"><label>Event / Badge</label><input type="color" id="cEvent" value="#fdcb6e"></div>
-        <div class="picker-group"><label>Day Border</label><input type="color" id="cBorder" value="#2a2a35"></div>
-        <div class="picker-group"><label>Day Text</label><input type="color" id="cDayText" value="#e8e8ed"></div>
-        <div class="picker-group"><label>Day Background</label><input type="color" id="cDayBg" value="#16161e"></div>
-        <div class="picker-group"><label>Muted Text</label><input type="color" id="cMuted" value="#8b8b9a"></div>
+        <div class="picker-group"><label data-i18n="colAccent">Accent</label><input type="color" id="cAccent" value="#6c5ce7"></div>
+        <div class="picker-group"><label data-i18n="colToday">Today</label><input type="color" id="cToday" value="#00cec9"></div>
+        <div class="picker-group"><label data-i18n="colMark">Mark</label><input type="color" id="cMark" value="#ff7675"></div>
+        <div class="picker-group"><label data-i18n="colEvent">Event / Badge</label><input type="color" id="cEvent" value="#fdcb6e"></div>
+        <div class="picker-group"><label data-i18n="colBorder">Day Border</label><input type="color" id="cBorder" value="#2a2a35"></div>
+        <div class="picker-group"><label data-i18n="colDayText">Day Text</label><input type="color" id="cDayText" value="#e8e8ed"></div>
+        <div class="picker-group"><label data-i18n="colDayBg">Day Background</label><input type="color" id="cDayBg" value="#16161e"></div>
+        <div class="picker-group"><label data-i18n="colMuted">Muted Text</label><input type="color" id="cMuted" value="#8b8b9a"></div>
       </div>
 
-      <h3>Font Library (40+ Fonts)</h3>
+      <h3 data-i18n="lblFontLibrary">Font Library (40+ Fonts)</h3>
       <div class="font-select">
         <select id="fontSelect">
           <option value="Poppins, sans-serif">Poppins (Clean Sans)</option>
@@ -1120,28 +1129,28 @@
         </select>
       </div>
 
-      <h3>UI Scale</h3>
+      <h3 data-i18n="lblUiScale">UI Scale</h3>
       <div class="slider-group">
-        <label><span>Zoom</span><span id="scaleVal">100%</span></label>
+        <label><span data-i18n="lblZoom">Zoom</span><span id="scaleVal">100%</span></label>
         <input type="range" id="scaleSlider" min="70" max="140" value="100">
       </div>
 
-      <h3>Month Photo Settings</h3>
+      <h3 data-i18n="lblPhotoSettings">Month Photo Settings</h3>
       <div class="photo-mode-row">
-        <button class="mode-btn" data-mode="monthly">Monthly</button>
-        <button class="mode-btn" data-mode="random">Random</button>
-        <button class="mode-btn" data-mode="custom">Custom</button>
+        <button class="mode-btn" data-mode="monthly" data-i18n="modeMonthly">Monthly</button>
+        <button class="mode-btn" data-mode="random" data-i18n="modeRandom">Random</button>
+        <button class="mode-btn" data-mode="custom" data-i18n="modeCustom">Custom</button>
       </div>
       <div class="slider-group" id="randomGroup" style="display:none;">
-        <label><span>Change interval</span><span id="intervalVal">30s</span></label>
+        <label><span data-i18n="lblInterval">Change interval</span><span id="intervalVal">30s</span></label>
         <input type="range" id="intervalSlider" min="10" max="120" value="30">
       </div>
-      <button class="upload-month-btn" id="uploadMonthBtn">📷 Upload Custom Photo</button>
-      <button class="upload-month-btn" id="removeCustomPhotoBtn" style="display:none; border-color:var(--mark); color:var(--mark);">🗑️ Remove Custom Photo</button>
+      <button class="upload-month-btn" id="uploadMonthBtn" data-i18n="btnUploadPhoto">📷 Upload Custom Photo</button>
+      <button class="upload-month-btn" id="removeCustomPhotoBtn" style="display:none; border-color:var(--mark); color:var(--mark);" data-i18n="btnRemovePhoto">🗑️ Remove Custom Photo</button>
       <input type="file" id="monthPhotoInput" accept="image/*">
 
-      <button class="install-btn" id="installBtn">Install as App</button>
-      <button class="reset-btn" id="resetTheme">Reset All Styles</button>
+      <button class="install-btn" id="installBtn" data-i18n="btnInstall">Install as App</button>
+      <button class="reset-btn" id="resetTheme" data-i18n="btnReset">Reset All Styles</button>
     </div>
 
     <div class="footer">• Desktop Calendar V12 •</div>
@@ -1167,23 +1176,283 @@
   if (!settings.scale) settings.scale = 100;
   if (settings.use24Hour === undefined) settings.use24Hour = false;
   if (settings.autoMarkPast === undefined) settings.autoMarkPast = false;
+  if (!settings.language) settings.language = 'en';
 
-  const presets = [
-    {name:'Purple',accent:'#6c5ce7',today:'#00cec9',mark:'#ff7675',event:'#fdcb6e',border:'#2a2a35',dayText:'#e8e8ed',dayBg:'#16161e',muted:'#8b8b9a'},
-    {name:'Ocean',accent:'#0984e3',today:'#00b894',mark:'#e17055',event:'#fdcb6e',border:'#1e3a5f',dayText:'#e8e8ed',dayBg:'#0f1c2e',muted:'#7a9bb8'},
-    {name:'Forest',accent:'#00b894',today:'#55efc4',mark:'#d63031',event:'#ffeaa7',border:'#1a3c34',dayText:'#e8e8ed',dayBg:'#0f2a24',muted:'#7aa89a'},
-    {name:'Sunset',accent:'#e17055',today:'#fdcb6e',mark:'#d63031',event:'#a29bfe',border:'#3d2a22',dayText:'#e8e8ed',dayBg:'#2a1a14',muted:'#b89a8a'},
-    {name:'Night',accent:'#636e72',today:'#74b9ff',mark:'#ff7675',event:'#a29bfe',border:'#2d3436',dayText:'#dfe6e9',dayBg:'#1e272e',muted:'#636e72'},
-    {name:'Rose',accent:'#e84393',today:'#fd79a8',mark:'#d63031',event:'#ffeaa7',border:'#3d1f2e',dayText:'#e8e8ed',dayBg:'#2a1520',muted:'#b87a9a'},
-    {name:'Neon Cyber',accent:'#00ffcc',today:'#ff007f',mark:'#ff0055',event:'#ffe600',border:'#1f1f3a',dayText:'#ffffff',dayBg:'#0b0c10',muted:'#66fcf1'},
-    {name:'Pastel Lavender',accent:'#b8c0ff',today:'#c8b6ff',mark:'#ffc6ff',event:'#ffd6a5',border:'#3c3b52',dayText:'#f1f1f1',dayBg:'#22223b',muted:'#9a8c98'},
-    {name:'Gold Luxury',accent:'#d4af37',today:'#f3e5ab',mark:'#e63946',event:'#f4a261',border:'#332d18',dayText:'#fefae0',dayBg:'#1a1810',muted:'#b5a366'},
-    {name:'Emerald',accent:'#2ec4b6',today:'#cbf3f0',mark:'#e71d36',event:'#ff9f1c',border:'#173d38',dayText:'#ffffff',dayBg:'#091e1c',muted:'#70a49e'},
-    {name:'Minimal Slate',accent:'#8a99ad',today:'#cbd5e1',mark:'#f87171',event:'#fbbf24',border:'#334155',dayText:'#f8fafc',dayBg:'#0f172a',muted:'#64748b'},
-    {name:'High Contrast',accent:'#ffff00',today:'#00ffff',mark:'#ff0000',event:'#ff00ff',border:'#444444',dayText:'#ffffff',dayBg:'#000000',muted:'#aaaaaa'}
-  ];
+  /* MULTI-LANGUAGE DICTIONARIES */
+  const i18n = {
+    en: {
+      searchPlaceholder: "🔍 Search notes, emojis or date...",
+      searchBtn: "Search",
+      todayBtn: "📍 Today",
+      weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+      addEventBtn: "+ Add Event",
+      closeFormBtn: "Close Form",
+      markDay: "Mark Day",
+      unmarkDay: "Unmark",
+      notePlaceholder: "Add note or event…",
+      emojiPlaceholder: "Emoji",
+      saveEventBtn: "Save Event / Note",
+      catDefault: "💛 Default / Gold",
+      catImportant: "💜 Important / Purple",
+      catUrgent: "❤️ Urgent / Red",
+      catWork: "💙 Work / Cyan",
+      catPersonal: "💚 Personal / Green",
+      catFamily: "🧡 Family / Orange",
+      catSpecial: "💖 Special / Pink",
+      catFitness: "🟦 Fitness / Blue",
+      catManage: "⚙️ Manage / Create Custom Category...",
+      catNamePlaceholder: "Category Name (e.g. Hobbies)",
+      saveBtn: "Save",
+      repNone: "Don't repeat",
+      repDaily: "Repeat daily",
+      repWeekly: "Repeat weekly",
+      repFortnightly: "Repeat fortnightly",
+      repYearly: "Repeat yearly",
+      lblLanguage: "Language",
+      lblThemes: "Quick Themes (12 Presets)",
+      lblPreferences: "Preferences",
+      lbl24Hour: "24-Hour Time Format",
+      lblAutoMark: "Auto Mark Past Days",
+      lblDataSafety: "Data Safety & Export",
+      btnBackup: "📥 Backup (JSON)",
+      btnRestore: "📤 Restore (JSON)",
+      btnIcs: "📅 Export to .ics (iCal)",
+      lblCustomColors: "Custom Colors",
+      colAccent: "Accent",
+      colToday: "Today",
+      colMark: "Mark",
+      colEvent: "Event / Badge",
+      colBorder: "Day Border",
+      colDayText: "Day Text",
+      colDayBg: "Day Background",
+      colMuted: "Muted Text",
+      lblFontLibrary: "Font Library (40+ Fonts)",
+      lblUiScale: "UI Scale",
+      lblZoom: "Zoom",
+      lblPhotoSettings: "Month Photo Settings",
+      modeMonthly: "Monthly",
+      modeRandom: "Random",
+      modeCustom: "Custom",
+      lblInterval: "Change interval",
+      btnUploadPhoto: "📷 Upload Custom Photo",
+      btnRemovePhoto: "🗑️ Remove Custom Photo",
+      btnInstall: "Install as App",
+      btnReset: "Reset All Styles",
+      noMatches: "No matching dates or notes found.",
+      selectDay: "Select a day",
+      repeatsDaily: "Repeats daily",
+      repeatsWeekly: "Repeats weekly",
+      repeatsFortnightly: "Repeats fortnightly",
+      repeatsYearly: "Repeats every year"
+    },
+    tl: {
+      searchPlaceholder: "🔍 Maghanap ng mga tala, emoji o petsa...",
+      searchBtn: "Hanapin",
+      todayBtn: "📍 Ngayon",
+      weekdays: ["Lin", "Lun", "Mar", "Miy", "Huw", "Biy", "Sab"],
+      addEventBtn: "+ Magdagdag ng Kaganapan",
+      closeFormBtn: "Isara ang Porma",
+      markDay: "Markahan ang Araw",
+      unmarkDay: "Alisin ang Marka",
+      notePlaceholder: "Magdagdag ng tala o kaganapan…",
+      emojiPlaceholder: "Emoji",
+      saveEventBtn: "I-save ang Kaganapan / Tala",
+      catDefault: "💛 Default / Ginto",
+      catImportant: "💜 Mahalaga / Lila",
+      catUrgent: "❤️ Apurahang / Pula",
+      catWork: "💙 Trabaho / Siyan",
+      catPersonal: "💚 Personal / Berde",
+      catFamily: "🧡 Pamilya / Kahel",
+      catSpecial: "💖 Espesyal / Pink",
+      catFitness: "🟦 Fitness / Asul",
+      catManage: "⚙️ Pamahalaan / Gumawa ng Sariling Kategorya...",
+      catNamePlaceholder: "Pangalan ng Kategorya (hal. Libangan)",
+      saveBtn: "I-save",
+      repNone: "Huwag ulitin",
+      repDaily: "Ulitin araw-araw",
+      repWeekly: "Ulitin linggu-linggo",
+      repFortnightly: "Ulitin tuwing dalawang linggo",
+      repYearly: "Ulitin taon-taon",
+      lblLanguage: "Wika",
+      lblThemes: "Mabilis na Tema (12 Preset)",
+      lblPreferences: "Mga Kagustuhan",
+      lbl24Hour: "24-Oras na Orasan",
+      lblAutoMark: "Awtomatikong Markahan ang Nakaraang Araw",
+      lblDataSafety: "Kaligtasan ng Datos & I-export",
+      btnBackup: "📥 Backup (JSON)",
+      btnRestore: "📤 Ibalik (JSON)",
+      btnIcs: "📅 I-export sa .ics (iCal)",
+      lblCustomColors: "Mga Sariling Kulay",
+      colAccent: "Accent",
+      colToday: "Ngayon",
+      colMark: "Marka",
+      colEvent: "Kaganapan / Badge",
+      colBorder: "Hangganan ng Araw",
+      colDayText: "Teksto ng Araw",
+      colDayBg: "Background ng Araw",
+      colMuted: "Muted na Teksto",
+      lblFontLibrary: "Silid-aklatan ng Font (40+ Font)",
+      lblUiScale: "Laki ng UI",
+      lblZoom: "Zoom",
+      lblPhotoSettings: "Mga Setting ng Larawan sa Buwan",
+      modeMonthly: "Buwanan",
+      modeRandom: "Random",
+      modeCustom: "Sarili",
+      lblInterval: "Baguhin ang agwat",
+      btnUploadPhoto: "📷 Mag-upload ng Sariling Larawan",
+      btnRemovePhoto: "🗑️ Alisin ang Sariling Larawan",
+      btnInstall: "I-install Bilang App",
+      btnReset: "I-reset ang Lahat ng Estilo",
+      noMatches: "Walang nakitang tumutugmang petsa o tala.",
+      selectDay: "Pumili ng araw",
+      repeatsDaily: "Ulitin araw-araw",
+      repeatsWeekly: "Ulitin linggu-linggo",
+      repeatsFortnightly: "Ulitin tuwing dalawang linggo",
+      repeatsYearly: "Ulitin bawat taon"
+    },
+    no: {
+      searchPlaceholder: "🔍 Søk etter notater, emojier eller dato...",
+      searchBtn: "Søk",
+      todayBtn: "📍 I dag",
+      weekdays: ["Søn", "Man", "Tir", "Ons", "Tor", "Fre", "Lør"],
+      addEventBtn: "+ Legg til hendelse",
+      closeFormBtn: "Lukk skjema",
+      markDay: "Marker dag",
+      unmarkDay: "Fjern markering",
+      notePlaceholder: "Legg til notat eller hendelse…",
+      emojiPlaceholder: "Emoji",
+      saveEventBtn: "Lagre hendelse / notat",
+      catDefault: "💛 Standard / Gull",
+      catImportant: "💜 Viktig / Lilla",
+      catUrgent: "❤️ Haster / Rød",
+      catWork: "💙 Arbeid / Cyan",
+      catPersonal: "💚 Personlig / Grønn",
+      catFamily: "🧡 Familie / Oransje",
+      catSpecial: "💖 Spesiell / Rosa",
+      catFitness: "🟦 Trening / Blå",
+      catManage: "⚙️ Administrer / Lag egendefinert kategori...",
+      catNamePlaceholder: "Kategorinavn (f.eks. Hobbyer)",
+      saveBtn: "Lagre",
+      repNone: "Ikke gjenta",
+      repDaily: "Gjenta daglig",
+      repWeekly: "Gjenta ukentlig",
+      repFortnightly: "Gjenta annenhver uke",
+      repYearly: "Gjenta årlig",
+      lblLanguage: "Språk",
+      lblThemes: "Hurtigtemaer (12 Forhåndsinnstillinger)",
+      lblPreferences: "Preferanser",
+      lbl24Hour: "24-timers tidsformat",
+      lblAutoMark: "Automatisk marker tidligere dager",
+      lblDataSafety: "Datasikkerhet og Eksport",
+      btnBackup: "📥 Sikkerhetskopi (JSON)",
+      btnRestore: "📤 Gjenopprett (JSON)",
+      btnIcs: "📅 Eksporter til .ics (iCal)",
+      lblCustomColors: "Egendefinerte farger",
+      colAccent: "Aksent",
+      colToday: "I dag",
+      colMark: "Markør",
+      colEvent: "Hendelse / Merke",
+      colBorder: "Dagsgrense",
+      colDayText: "Dagstext",
+      colDayBg: "Dagsbakgrunn",
+      colMuted: "Dempet tekst",
+      lblFontLibrary: "Skriftbibliotek (40+ Skrifter)",
+      lblUiScale: "UI Skala",
+      lblZoom: "Zoom",
+      lblPhotoSettings: "Månedlig fotoinnstillinger",
+      modeMonthly: "Månedlig",
+      modeRandom: "Tilfeldig",
+      modeCustom: "Egendefinert",
+      lblInterval: "Endringsintervall",
+      btnUploadPhoto: "📷 Last opp egendefinert bilde",
+      btnRemovePhoto: "🗑️ Fjern egendefinert bilde",
+      btnInstall: "Installer som app",
+      btnReset: "Tilbakestill alle stiler",
+      noMatches: "Ingen matchende datoer eller notater funnet.",
+      selectDay: "Velg en dag",
+      repeatsDaily: "Gjentas daglig",
+      repeatsWeekly: "Gjentas ukentlig",
+      repeatsFortnightly: "Gjentas annenhver uke",
+      repeatsYearly: "Gjentas hvert år"
+    }
+  };
 
-  /* CALCULATE CONTRAST COLOR (DARK OR LIGHT TEXT ON BACKGROUND COLOR) */
+  function t(key){
+    const lang = settings.language || 'en';
+    return i18n[lang][key] || i18n['en'][key] || key;
+  }
+
+  function applyLanguageStrings(){
+    document.getElementById('searchBox').placeholder = t('searchPlaceholder');
+    document.getElementById('searchBtn').textContent = t('searchBtn');
+    document.getElementById('todayBtn').textContent = t('todayBtn');
+    
+    const weekdaysEl = document.getElementById('weekdaysGrid');
+    const wDays = t('weekdays');
+    weekdaysEl.innerHTML = wDays.map(d => `<div>${d}</div>`).join('');
+
+    const toggleBtn = document.getElementById('toggleFormBtn');
+    if (!toggleBtn.classList.contains('active')) {
+      toggleBtn.textContent = t('addEventBtn');
+    } else {
+      toggleBtn.textContent = t('closeFormBtn');
+    }
+
+    const markBtn = document.getElementById('markBtn');
+    const k = key(selected);
+    markBtn.textContent = marks[k] ? t('unmarkDay') : t('markDay');
+
+    document.getElementById('noteText').placeholder = t('notePlaceholder');
+    document.getElementById('noteEmoji').placeholder = t('emojiPlaceholder');
+    document.getElementById('addNoteBtn').textContent = t('saveEventBtn');
+    document.getElementById('customCatName').placeholder = t('catNamePlaceholder');
+    document.getElementById('saveCustomCatBtn').textContent = t('saveBtn');
+
+    // Update select options text
+    document.querySelector('option[value="#fdcb6e"]').textContent = t('catDefault');
+    document.querySelector('option[value="#6c5ce7"]').textContent = t('catImportant');
+    document.querySelector('option[value="#ff7675"]').textContent = t('catUrgent');
+    document.querySelector('option[value="#00cec9"]').textContent = t('catWork');
+    document.querySelector('option[value="#00b894"]').textContent = t('catPersonal');
+    document.querySelector('option[value="#e17055"]').textContent = t('catFamily');
+    document.querySelector('option[value="#e84393"]').textContent = t('catSpecial');
+    document.querySelector('option[value="#74b9ff"]').textContent = t('catFitness');
+    document.querySelector('option[value="__NEW__"]').textContent = t('catManage');
+
+    document.querySelector('option[value="none"]').textContent = t('repNone');
+    document.querySelector('option[value="daily"]').textContent = t('repDaily');
+    document.querySelector('option[value="weekly"]').textContent = t('repWeekly');
+    document.querySelector('option[value="fortnightly"]').textContent = t('repFortnightly');
+    document.querySelector('option[value="yearly"]').textContent = t('repYearly');
+
+    // Update data-i18n elements
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const keyName = el.getAttribute('data-i18n');
+      if (i18n[settings.language][keyName]) {
+        el.textContent = i18n[settings.language][keyName];
+      }
+    });
+
+    document.getElementById('languageSelect').value = settings.language;
+  }
+
+  function getLocalizedDateString(dateObj, options){
+    const langMap = { en: 'en-US', tl: 'fil-PH', no: 'nb-NO' };
+    const locale = langMap[settings.language] || 'en-US';
+    return dateObj.toLocaleDateString(locale, options);
+  }
+
+  function getLocalizedTimeString(dateObj){
+    const langMap = { en: 'en-US', tl: 'fil-PH', no: 'nb-NO' };
+    const locale = langMap[settings.language] || 'en-US';
+    return dateObj.toLocaleTimeString(locale, {
+      hour12: !settings.use24Hour,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  }
+
   function getContrastYIQ(hexcolor){
     if(!hexcolor || hexcolor.charAt(0) !== '#') return '#ffffff';
     let hex = hexcolor.replace('#', '');
@@ -1210,41 +1479,41 @@
   }
 
   function applyTheme(){
-    const t = {
+    const tTheme = {
       accent:'#6c5ce7', today:'#00cec9', mark:'#ff7675', event:'#fdcb6e',
       border:'#2a2a35', dayText:'#e8e8ed', dayBg:'#16161e', muted:'#8b8b9a',
       font: "Poppins, sans-serif", ...theme
     };
 
-    const accentTextColor = getContrastYIQ(t.accent);
-    const todayTextColor = getContrastYIQ(t.today);
-    const eventTextColor = getContrastYIQ(t.event);
+    const accentTextColor = getContrastYIQ(tTheme.accent);
+    const todayTextColor = getContrastYIQ(tTheme.today);
+    const eventTextColor = getContrastYIQ(tTheme.event);
 
-    document.documentElement.style.setProperty('--accent', t.accent);
+    document.documentElement.style.setProperty('--accent', tTheme.accent);
     document.documentElement.style.setProperty('--accent-text', accentTextColor);
-    document.documentElement.style.setProperty('--today', t.today);
+    document.documentElement.style.setProperty('--today', tTheme.today);
     document.documentElement.style.setProperty('--today-text', todayTextColor);
-    document.documentElement.style.setProperty('--mark', t.mark);
-    document.documentElement.style.setProperty('--event', t.event);
+    document.documentElement.style.setProperty('--mark', tTheme.mark);
+    document.documentElement.style.setProperty('--event', tTheme.event);
     document.documentElement.style.setProperty('--event-text', eventTextColor);
-    document.documentElement.style.setProperty('--day-border', t.border);
-    document.documentElement.style.setProperty('--day-text', t.dayText);
-    document.documentElement.style.setProperty('--day-bg', t.dayBg);
-    document.documentElement.style.setProperty('--muted', t.muted);
-    document.documentElement.style.setProperty('--font', t.font);
+    document.documentElement.style.setProperty('--day-border', tTheme.border);
+    document.documentElement.style.setProperty('--day-text', tTheme.dayText);
+    document.documentElement.style.setProperty('--day-bg', tTheme.dayBg);
+    document.documentElement.style.setProperty('--muted', tTheme.muted);
+    document.documentElement.style.setProperty('--font', tTheme.font);
 
     const header = document.querySelector('.header');
-    if (header) header.style.background = `linear-gradient(135deg, ${t.accent}, color-mix(in srgb, ${t.accent} 65%, #a29bfe))`;
+    if (header) header.style.background = `linear-gradient(135deg, ${tTheme.accent}, color-mix(in srgb, ${tTheme.accent} 65%, #a29bfe))`;
 
-    document.getElementById('cAccent').value = t.accent;
-    document.getElementById('cToday').value = t.today;
-    document.getElementById('cMark').value = t.mark;
-    document.getElementById('cEvent').value = t.event;
-    document.getElementById('cBorder').value = t.border;
-    document.getElementById('cDayText').value = t.dayText;
-    document.getElementById('cDayBg').value = t.dayBg;
-    document.getElementById('cMuted').value = t.muted;
-    document.getElementById('fontSelect').value = t.font;
+    document.getElementById('cAccent').value = tTheme.accent;
+    document.getElementById('cToday').value = tTheme.today;
+    document.getElementById('cMark').value = tTheme.mark;
+    document.getElementById('cEvent').value = tTheme.event;
+    document.getElementById('cBorder').value = tTheme.border;
+    document.getElementById('cDayText').value = tTheme.dayText;
+    document.getElementById('cDayBg').value = tTheme.dayBg;
+    document.getElementById('cMuted').value = tTheme.muted;
+    document.getElementById('fontSelect').value = tTheme.font;
   }
 
   function applyScale(){
@@ -1365,13 +1634,8 @@
 
       if (seconds !== lastClockSec) {
         lastClockSec = seconds;
-        document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', {
-          hour12: !settings.use24Hour,
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        });
-        document.getElementById('fullDate').textContent = now.toLocaleDateString('en-US', {
+        document.getElementById('clock').textContent = getLocalizedTimeString(now);
+        document.getElementById('fullDate').textContent = getLocalizedDateString(now, {
           weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
         });
       }
@@ -1382,7 +1646,7 @@
 
   function render(){
     const year = current.getFullYear(), month = current.getMonth();
-    document.getElementById('monthYear').textContent = current.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    document.getElementById('monthYear').textContent = getLocalizedDateString(current, { month: 'long', year: 'numeric' });
 
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month+1, 0).getDate();
@@ -1407,55 +1671,6 @@
     renderCustomCategoriesUI();
   }
 
-  function createDayCell(date, other){
-    const cell = document.createElement('div');
-    cell.className = 'day';
-    if (other) cell.classList.add('other-month');
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const cellDate = new Date(date);
-    cellDate.setHours(0, 0, 0, 0);
-
-    const isToday = cellDate.getTime() === today.getTime();
-    const isPast = cellDate < today;
-
-    if (isToday) cell.classList.add('today');
-    if (date.toDateString() === selected.toDateString()) cell.classList.add('selected');
-
-    const k = key(date);
-    if (marks[k] || (settings.autoMarkPast && isPast)) {
-      cell.classList.add('marked');
-      if (typeof marks[k] === 'string') {
-        cell.style.setProperty('--mark-color', marks[k]);
-      } else {
-        cell.style.removeProperty('--mark-color');
-      }
-    }
-
-    const dayNotes = getNotesForDate(date);
-    let html = `<div class="day-num">${date.getDate()}</div>`;
-
-    const allEmojis = dayNotes.map(n => n.emoji).filter(Boolean).join('');
-    if (allEmojis) {
-      const limitedEmojis = Array.from(allEmojis).slice(0, 4).join('');
-      html += `<div class="day-emoji">${limitedEmojis}</div>`;
-    }
-
-    if (dayNotes.length > 0) {
-      html += `<div class="day-badge">${dayNotes.length}</div>`;
-    }
-
-    cell.innerHTML = html;
-    cell.addEventListener('click', () => {
-      selected = new Date(date);
-      current = new Date(date.getFullYear(), date.getMonth(), 1);
-      render();
-    });
-    return cell;
-  }
-
   function formatTextSpan(text, styles){
     let css = [];
     if (styles?.bold) css.push('font-weight: bold;');
@@ -1477,7 +1692,7 @@
 
   function updatePanel(){
     const k = key(selected);
-    document.getElementById('panelDate').textContent = selected.toLocaleDateString('en-US', {
+    document.getElementById('panelDate').textContent = getLocalizedDateString(selected, {
       weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
     });
 
@@ -1486,13 +1701,13 @@
 
     if (marks[k]) {
       markBtn.classList.add('active');
-      markBtn.textContent = 'Unmark';
+      markBtn.textContent = t('unmarkDay');
       if (typeof marks[k] === 'string') {
         markPicker.value = marks[k];
       }
     } else {
       markBtn.classList.remove('active');
-      markBtn.textContent = 'Mark Day';
+      markBtn.textContent = t('markDay');
     }
 
     const list = document.getElementById('eventList');
@@ -1507,10 +1722,10 @@
       const formattedTime = n.time ? `<span class="event-time">${formatDisplayTime(n.time)}</span>` : '';
       
       let repeatLabel = '';
-      if (n.repeat === 'daily') repeatLabel = '<div class="event-recurring">Repeats daily</div>';
-      else if (n.repeat === 'weekly') repeatLabel = '<div class="event-recurring">Repeats weekly</div>';
-      else if (n.repeat === 'fortnightly') repeatLabel = '<div class="event-recurring">Repeats fortnightly</div>';
-      else if (n.repeat === 'yearly' || n.recurring) repeatLabel = '<div class="event-recurring">Repeats every year</div>';
+      if (n.repeat === 'daily') repeatLabel = `<div class="event-recurring">${t('repeatsDaily')}</div>`;
+      else if (n.repeat === 'weekly') repeatLabel = `<div class="event-recurring">${t('repeatsWeekly')}</div>`;
+      else if (n.repeat === 'fortnightly') repeatLabel = `<div class="event-recurring">${t('repeatsFortnightly')}</div>`;
+      else if (n.repeat === 'yearly' || n.recurring) repeatLabel = `<div class="event-recurring">${t('repeatsYearly')}</div>`;
 
       li.innerHTML = `
         <input type="checkbox" ${n.completed ? 'checked' : ''} data-id="${n.id}" title="Toggle Completed">
@@ -1578,14 +1793,14 @@
     });
 
     if (matches.length === 0) {
-      resultsContainer.innerHTML = `<div class="search-item">No matching dates or notes found.</div>`;
+      resultsContainer.innerHTML = `<div class="search-item">${t('noMatches')}</div>`;
       return;
     }
 
     matches.slice(0, 8).forEach(m => {
       const item = document.createElement('div');
       item.className = 'search-item';
-      item.innerHTML = `<span><strong>${m.date.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}</strong>: ${m.emoji} ${m.text}</span>`;
+      item.innerHTML = `<span><strong>${getLocalizedDateString(m.date, {month:'short', day:'numeric', year:'numeric'})}</strong>: ${m.emoji} ${m.text}</span>`;
       item.addEventListener('click', () => {
         selected = new Date(m.date);
         current = new Date(m.date.getFullYear(), m.date.getMonth(), 1);
@@ -1621,7 +1836,7 @@
   toggleFormBtn.addEventListener('click', () => {
     noteForm.classList.toggle('open');
     toggleFormBtn.classList.toggle('active', noteForm.classList.contains('open'));
-    toggleFormBtn.textContent = noteForm.classList.contains('open') ? 'Close Form' : '+ Add Event';
+    toggleFormBtn.textContent = noteForm.classList.contains('open') ? t('closeFormBtn') : t('addEventBtn');
   });
 
   /* TEXT FORMATTING TOGGLES */
@@ -1674,6 +1889,14 @@
     document.getElementById('eventCategory').value = color;
     nameInput.value = '';
     emojiInput.value = '';
+  });
+
+  /* LANGUAGE SELECTOR HANDLER */
+  document.getElementById('languageSelect').addEventListener('change', (e) => {
+    settings.language = e.target.value;
+    save();
+    applyLanguageStrings();
+    render();
   });
 
   /* EMOJI FILTER FOR INPUT FIELDS */
@@ -1761,7 +1984,7 @@
 
     noteForm.classList.remove('open');
     toggleFormBtn.classList.remove('active');
-    toggleFormBtn.textContent = '+ Add Event';
+    toggleFormBtn.textContent = t('addEventBtn');
 
     save();
     render();
@@ -1819,6 +2042,7 @@
         save();
         applyTheme();
         applyScale();
+        applyLanguageStrings();
         render();
         alert('Data imported successfully!');
       } catch (err) {
@@ -1853,6 +2077,21 @@
   });
 
   const themeRow = document.getElementById('themeRow');
+  const presets = [
+    {name:'Purple',accent:'#6c5ce7',today:'#00cec9',mark:'#ff7675',event:'#fdcb6e',border:'#2a2a35',dayText:'#e8e8ed',dayBg:'#16161e',muted:'#8b8b9a'},
+    {name:'Ocean',accent:'#0984e3',today:'#00b894',mark:'#e17055',event:'#fdcb6e',border:'#1e3a5f',dayText:'#e8e8ed',dayBg:'#0f1c2e',muted:'#7a9bb8'},
+    {name:'Forest',accent:'#00b894',today:'#55efc4',mark:'#d63031',event:'#ffeaa7',border:'#1a3c34',dayText:'#e8e8ed',dayBg:'#0f2a24',muted:'#7aa89a'},
+    {name:'Sunset',accent:'#e17055',today:'#fdcb6e',mark:'#d63031',event:'#a29bfe',border:'#3d2a22',dayText:'#e8e8ed',dayBg:'#2a1a14',muted:'#b89a8a'},
+    {name:'Night',accent:'#636e72',today:'#74b9ff',mark:'#ff7675',event:'#a29bfe',border:'#2d3436',dayText:'#dfe6e9',dayBg:'#1e272e',muted:'#636e72'},
+    {name:'Rose',accent:'#e84393',today:'#fd79a8',mark:'#d63031',event:'#ffeaa7',border:'#3d1f2e',dayText:'#e8e8ed',dayBg:'#2a1520',muted:'#b87a9a'},
+    {name:'Neon Cyber',accent:'#00ffcc',today:'#ff007f',mark:'#ff0055',event:'#ffe600',border:'#1f1f3a',dayText:'#ffffff',dayBg:'#0b0c10',muted:'#66fcf1'},
+    {name:'Pastel Lavender',accent:'#b8c0ff',today:'#c8b6ff',mark:'#ffc6ff',event:'#ffd6a5',border:'#3c3b52',dayText:'#f1f1f1',dayBg:'#22223b',muted:'#9a8c98'},
+    {name:'Gold Luxury',accent:'#d4af37',today:'#f3e5ab',mark:'#e63946',event:'#f4a261',border:'#332d18',dayText:'#fefae0',dayBg:'#1a1810',muted:'#b5a366'},
+    {name:'Emerald',accent:'#2ec4b6',today:'#cbf3f0',mark:'#e71d36',event:'#ff9f1c',border:'#173d38',dayText:'#ffffff',dayBg:'#091e1c',muted:'#70a49e'},
+    {name:'Minimal Slate',accent:'#8a99ad',today:'#cbd5e1',mark:'#f87171',event:'#fbbf24',border:'#334155',dayText:'#f8fafc',dayBg:'#0f172a',muted:'#64748b'},
+    {name:'High Contrast',accent:'#ffff00',today:'#00ffff',mark:'#ff0000',event:'#ff00ff',border:'#444444',dayText:'#ffffff',dayBg:'#000000',muted:'#aaaaaa'}
+  ];
+
   presets.forEach(p => {
     const sw = document.createElement('div');
     sw.className = 'theme-swatch';
@@ -1899,7 +2138,6 @@
     document.getElementById('intervalSlider').value = settings.randomInterval || 30;
     document.getElementById('intervalVal').textContent = (settings.randomInterval || 30) + 's';
     
-    // Fix #2: Show "Remove Custom Photo" button only when in 'custom' mode and a photo exists for the current month
     const mk = monthKey(current);
     const removePhotoBtn = document.getElementById('removeCustomPhotoBtn');
     if (settings.photoMode === 'custom' && monthPhotos[mk]) {
@@ -1912,13 +2150,10 @@
   document.querySelectorAll('.mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       settings.photoMode = btn.dataset.mode;
-      
-      // Fix #1: If switching away from 'custom', delete/clear out the uploaded custom photo for the active month
       if (settings.photoMode !== 'custom') {
         const mk = monthKey(current);
         delete monthPhotos[mk];
       }
-
       updatePhotoUI(); save(); loadMonthPhoto();
     });
   });
@@ -1947,7 +2182,6 @@
     reader.readAsDataURL(file);
   });
 
-  // Fix #2 Handler: Remove the current month's custom photo and switch back to monthly view
   document.getElementById('removeCustomPhotoBtn').addEventListener('click', () => {
     const mk = monthKey(current);
     delete monthPhotos[mk];
@@ -1993,6 +2227,7 @@
   setupTextStyleButtons();
   applyTheme();
   applyScale();
+  applyLanguageStrings();
   updatePhotoUI();
   startSmoothClock();
   render();
