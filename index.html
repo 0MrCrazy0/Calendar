@@ -1526,6 +1526,7 @@
     const img = document.getElementById('monthPhoto');
     clearInterval(randomTimer);
 
+    // If a custom photo exists for this month, use it when photoMode is custom OR fallback nicely
     if (settings.photoMode === 'custom' && monthPhotos[mk]) {
       img.src = monthPhotos[mk];
       return;
@@ -1713,6 +1714,7 @@
 
     updatePanel();
     loadMonthPhoto();
+    updatePhotoUI();
     renderCustomCategoriesUI();
   }
 
@@ -2057,7 +2059,7 @@
 
   /* DATA BACKUP & RESTORE & ICAL EXPORT */
   document.getElementById('exportJsonBtn').addEventListener('click', () => {
-    const data = { marks, notes, recurring, customCategories, theme, settings };
+    const data = { marks, notes, recurring, customCategories, theme, settings, monthPhotos };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -2084,6 +2086,7 @@
         if (imported.customCategories) customCategories = imported.customCategories;
         if (imported.theme) theme = imported.theme;
         if (imported.settings) settings = imported.settings;
+        if (imported.monthPhotos) monthPhotos = imported.monthPhotos;
         save();
         applyTheme();
         applyScale();
@@ -2185,7 +2188,7 @@
     
     const mk = monthKey(current);
     const removePhotoBtn = document.getElementById('removeCustomPhotoBtn');
-    if (settings.photoMode === 'custom' && monthPhotos[mk]) {
+    if (monthPhotos[mk]) {
       removePhotoBtn.style.display = 'block';
     } else {
       removePhotoBtn.style.display = 'none';
@@ -2195,10 +2198,6 @@
   document.querySelectorAll('.mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       settings.photoMode = btn.dataset.mode;
-      if (settings.photoMode !== 'custom') {
-        const mk = monthKey(current);
-        delete monthPhotos[mk];
-      }
       updatePhotoUI(); save(); loadMonthPhoto();
     });
   });
