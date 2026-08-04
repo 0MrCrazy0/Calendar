@@ -1,0 +1,1702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#6c5ce7">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Desktop Calendar V12</title>
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Google Fonts Preconnect -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- 40+ Google Fonts Selection -->
+  <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Bangers&family=Caveat:wght@400;700&family=Cinzel:wght@400;600&family=Comfortaa:wght@300;400;500;600;700&family=Dancing+Script:wght@400;700&family=Fredoka:wght@300;400;500;600&family=Great+Vibes&family=Inter:wght@300;400;500;600;700&family=Kalam:wght@300;400;700&family=Lobster&family=Manrope:wght@300;400;500;600;700&family=Merriweather:wght@300;400;700&family=Nunito:wght@300;400;500;600;700&family=Orbitron:wght@400;600&family=Outfit:wght@300;400;500;600;700&family=Pacifico&family=Patrick+Hand&family=Permanent+Marker&family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500;600;700&family=Quicksand:wght@300;400;500;600;700&family=Satisfy&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f13;
+    --card: #16161e;
+    --text: #e8e8ed;
+    --muted: #8b8b9a;
+    --accent: #6c5ce7;
+    --accent-text: #ffffff;
+    --today: #00cec9;
+    --today-text: #0f0f13;
+    --mark: #ff7675;
+    --event: #fdcb6e;
+    --event-text: #111111;
+    --day-border: rgba(255, 255, 255, 0.12);
+    --day-text: #e8e8ed;
+    --day-bg: transparent;
+    --font: 'Poppins', 'Segoe UI', system-ui, sans-serif;
+    --scale: 1;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+  }
+
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 12px;
+    overflow-y: auto;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 440px;
+    background: var(--card);
+    border-radius: 20px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    overflow: hidden;
+    margin-bottom: 30px;
+    transform: scale(var(--scale));
+    transform-origin: top center;
+    transition: transform 0.2s ease;
+  }
+
+  /* PHOTO & HEADER LAYOUT */
+  .photo-header {
+    width: 100%;
+    height: 220px;
+    background: #111;
+    overflow: hidden;
+    position: relative;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .photo-header img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .header {
+    background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 65%, #a29bfe));
+    color: var(--accent-text);
+    padding: 22px 16px 18px;
+    text-align: center;
+    position: relative;
+    margin-top: -2px;
+  }
+
+  .time {
+    font-size: 38px;
+    font-weight: 300;
+    letter-spacing: 2px;
+    line-height: 1;
+    margin-top: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .date-line {
+    font-size: 13px;
+    opacity: 0.92;
+    margin-top: 6px;
+    font-weight: 500;
+  }
+
+  .settings-btn {
+    position: absolute;
+    top: 18px;
+    right: 16px;
+    background: rgba(0, 0, 0, 0.25);
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: var(--accent-text);
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+    padding: 0;
+    transition: background 0.2s, transform 0.2s;
+  }
+
+  .settings-btn:hover {
+    background: rgba(0, 0, 0, 0.4);
+    transform: rotate(45deg);
+  }
+
+  /* CONTROLS & SEARCH BAR */
+  .controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  }
+
+  .nav-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text);
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.2s ease;
+  }
+
+  .nav-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-text);
+  }
+
+  .month-year {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .search-bar {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .search-bar input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: white;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    outline: none;
+  }
+
+  .search-bar input:focus {
+    border-color: var(--accent);
+  }
+
+  .search-bar button {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent);
+    color: var(--accent-text);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  #searchResults {
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 0 12px;
+  }
+
+  .search-item {
+    padding: 10px;
+    margin-bottom: 6px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .search-item:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  /* GRID */
+  .weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 8px 10px 4px;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    font-weight: 600;
+  }
+
+  .days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: var(--day-border);
+    border: 1px solid var(--day-border);
+    margin: 0 10px 8px;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .day {
+    aspect-ratio: 1;
+    height: 100%;
+    max-height: 58px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 4px;
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+    background: var(--day-bg);
+    color: var(--day-text);
+    font-size: 13px;
+    font-weight: 500;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  .day:hover {
+    background: rgba(108, 92, 231, 0.15);
+  }
+
+  .day.other-month {
+    color: var(--muted);
+    opacity: 0.45;
+  }
+
+  .day.today {
+    background: var(--today);
+    color: var(--today-text);
+    font-weight: 700;
+  }
+
+  .day.selected {
+    box-shadow: inset 0 0 0 2px var(--accent);
+    z-index: 1;
+  }
+
+  .day.marked::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 6px;
+    height: 6px;
+    background: var(--mark-color, var(--mark));
+    border-radius: 50%;
+  }
+
+  .day-num {
+    line-height: 1;
+    font-size: 12px;
+  }
+
+  .day-emoji {
+    font-size: 11px;
+    line-height: 1.1;
+    margin-top: 2px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 90%;
+  }
+
+  .day-badge {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    background: var(--event);
+    color: var(--event-text);
+    font-size: 9px;
+    font-weight: 700;
+    min-width: 13px;
+    height: 13px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 2px;
+    line-height: 0;
+  }
+
+  /* DAY PANEL & TEXT STYLE CONTROLS */
+  .day-panel {
+    padding: 12px 14px 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.09);
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .panel-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .panel-date {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .mark-btn, .toggle-form-btn {
+    background: transparent;
+    border: 1px solid var(--mark);
+    color: var(--mark);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+
+  .toggle-form-btn {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .toggle-form-btn.active, .toggle-form-btn:hover {
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+
+  .mark-btn.active, .mark-btn:hover {
+    background: var(--mark);
+    color: #ffffff;
+  }
+
+  .mark-color-picker {
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    background: none;
+    padding: 0;
+  }
+
+  .note-form {
+    margin-bottom: 10px;
+    display: none; /* Hidden by default */
+  }
+
+  .note-form.open {
+    display: block;
+  }
+
+  .note-form input[type="text"] {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text);
+    padding: 8px 11px;
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+    margin-bottom: 6px;
+  }
+
+  .note-form input:focus {
+    border-color: var(--accent);
+  }
+
+  /* TEXT FORMATTING TOOLBAR */
+  .text-style-bar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .style-btn {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s;
+  }
+
+  .style-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-text);
+  }
+
+  .note-options {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+
+  .note-options input[type="text"] {
+    width: 75px;
+    text-align: center;
+    font-size: 15px;
+    padding: 6px;
+    margin-bottom: 0;
+  }
+
+  .note-options select {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text);
+    padding: 6px;
+    border-radius: 6px;
+    font-size: 12px;
+    min-width: 140px;
+  }
+
+  .note-options label {
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+  }
+
+  .add-note-btn {
+    width: 100%;
+    padding: 10px;
+    background: var(--accent);
+    border: none;
+    color: var(--accent-text);
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .add-note-btn:hover {
+    filter: brightness(1.1);
+  }
+
+  .event-list {
+    list-style: none;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+
+  .event-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 13px;
+    gap: 8px;
+  }
+
+  .event-item:last-child {
+    border-bottom: none;
+  }
+
+  .event-text {
+    flex: 1;
+  }
+
+  .event-emoji {
+    font-size: 15px;
+    margin-right: 4px;
+  }
+
+  .event-recurring {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .delete-event {
+    background: none;
+    border: none;
+    color: var(--mark);
+    cursor: pointer;
+    font-size: 16px;
+    opacity: 0.7;
+  }
+
+  .delete-event:hover {
+    opacity: 1;
+  }
+
+  /* CUSTOM CATEGORY MODAL & MANAGEMENT */
+  .custom-cat-box {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+  }
+
+  .custom-cat-box.open {
+    display: flex;
+  }
+
+  .custom-cat-inputs {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .custom-cat-inputs input[type="text"] {
+    margin-bottom: 0;
+  }
+
+  #customCatName {
+    flex: 1;
+  }
+
+  #customCatEmoji {
+    width: 45px;
+    text-align: center;
+  }
+
+  .custom-cat-inputs input[type="color"] {
+    width: 34px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    cursor: pointer;
+  }
+
+  .custom-cat-inputs button {
+    padding: 8px 12px;
+    background: var(--accent);
+    color: var(--accent-text);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .custom-cat-list {
+    margin-top: 4px;
+    max-height: 100px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .cat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  .cat-item-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .cat-item-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .delete-cat-btn {
+    background: none;
+    border: none;
+    color: var(--mark);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0 4px;
+  }
+
+  /* SETTINGS MENU */
+  .settings {
+    display: none;
+    padding: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.09);
+    background: rgba(0, 0, 0, 0.2);
+    max-height: 520px;
+    overflow-y: auto;
+  }
+
+  .settings.open {
+    display: block;
+  }
+
+  .settings h3 {
+    font-size: 11px;
+    margin: 12px 0 8px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .settings h3:first-child {
+    margin-top: 0;
+  }
+
+  .theme-row {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  .theme-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    cursor: pointer;
+    border: 2px solid transparent;
+  }
+
+  .theme-swatch:hover {
+    transform: scale(1.1);
+  }
+
+  /* TOGGLE SWITCHES */
+  .toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    margin-bottom: 6px;
+  }
+
+  .toggle-row label {
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+  }
+
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(255, 255, 255, 0.2);
+    transition: .3s;
+    border-radius: 22px;
+  }
+
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+  }
+
+  input:checked + .slider {
+    background-color: var(--accent);
+  }
+
+  input:checked + .slider:before {
+    transform: translateX(18px);
+  }
+
+  .color-pickers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .picker-group label {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+
+  .picker-group input[type="color"] {
+    width: 100%;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background: none;
+  }
+
+  .slider-group {
+    margin-bottom: 10px;
+  }
+
+  .slider-group label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+
+  .slider-group input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+  }
+
+  .font-select, .photo-mode-row {
+    margin-bottom: 10px;
+  }
+
+  .font-select select {
+    width: 100%;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text);
+    border-radius: 8px;
+    font-size: 13px;
+  }
+
+  .photo-mode-row {
+    display: flex;
+    gap: 6px;
+  }
+
+  .mode-btn {
+    flex: 1;
+    padding: 7px 4px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: transparent;
+    color: var(--text);
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .mode-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-text);
+  }
+
+  .upload-month-btn {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: transparent;
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .upload-month-btn:hover {
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  .install-btn {
+    width: 100%;
+    padding: 10px;
+    background: var(--accent);
+    border: none;
+    color: var(--accent-text);
+    border-radius: 9px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 8px 0;
+    display: none;
+  }
+
+  .reset-btn {
+    width: 100%;
+    padding: 9px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text);
+    border-radius: 9px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  .reset-btn:hover {
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  .footer {
+    text-align: center;
+    padding: 7px;
+    font-size: 10px;
+    color: var(--muted);
+    border-top: 1px solid rgba(255, 255, 255, 0.09);
+  }
+
+  input[type="file"] {
+    display: none;
+  }
+</style>
+</head>
+<body>
+  <div class="app" id="app">
+    <!-- Header Photo -->
+    <div class="photo-header">
+      <img id="monthPhoto" src="" alt="Month Header Photo">
+    </div>
+
+    <!-- Clock & Date Header -->
+    <div class="header">
+      <button class="settings-btn" id="settingsBtn" title="Settings">⚙</button>
+      <div class="time" id="clock">00:00:00</div>
+      <div class="date-line" id="fullDate">Loading...</div>
+    </div>
+
+    <!-- Calendar Controls -->
+    <div class="controls">
+      <button class="nav-btn" id="prevMonth" title="Previous Month">‹</button>
+      <div class="month-year" id="monthYear">Month Year</div>
+      <button class="nav-btn" id="nextMonth" title="Next Month">›</button>
+    </div>
+
+    <!-- Global & Date Search Bar -->
+    <div class="search-bar">
+      <input id="searchBox" type="text" placeholder="🔍 Search notes, emojis or date (e.g. 15 Aug)...">
+      <button id="searchBtn">Search</button>
+    </div>
+    <div id="searchResults"></div>
+
+    <!-- Weekday Headers -->
+    <div class="weekdays">
+      <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+    </div>
+
+    <!-- Days Grid -->
+    <div class="days" id="daysGrid"></div>
+
+    <!-- Selected Day Detail Panel -->
+    <div class="day-panel">
+      <div class="panel-header">
+        <div class="panel-date" id="panelDate">Select a day</div>
+        <div class="panel-actions">
+          <button class="toggle-form-btn" id="toggleFormBtn">+ Add Event</button>
+          <input type="color" id="markColorPicker" class="mark-color-picker" value="#ff7675" title="Custom Mark Color">
+          <button class="mark-btn" id="markBtn">Mark Day</button>
+        </div>
+      </div>
+
+      <!-- Toggleable Note Creation Form -->
+      <div class="note-form" id="noteForm">
+        <!-- Text Styling Bar -->
+        <div class="text-style-bar">
+          <button type="button" class="style-btn" id="btnBold" title="Bold"><b>B</b></button>
+          <button type="button" class="style-btn" id="btnItalic" title="Italic"><i>I</i></button>
+          <button type="button" class="style-btn" id="btnStrike" title="Strikethrough"><s>S</s></button>
+        </div>
+
+        <input type="text" id="noteText" placeholder="Add note or event…">
+
+        <div class="note-options">
+          <input type="text" id="noteEmoji" placeholder="Emoji" maxlength="8" title="Paste one or multiple emojis">
+          
+          <select id="eventCategory" title="Event Category / Color">
+            <option value="#fdcb6e">💛 Default / Gold</option>
+            <option value="#6c5ce7">💜 Important / Purple</option>
+            <option value="#ff7675">❤️ Urgent / Red</option>
+            <option value="#00cec9">💙 Work / Cyan</option>
+            <option value="#00b894">💚 Personal / Green</option>
+            <option value="#e17055">🧡 Family / Orange</option>
+            <option value="#e84393">💖 Special / Pink</option>
+            <option value="#74b9ff">🟦 Fitness / Blue</option>
+            <option value="__NEW__">⚙️ Manage / Create Custom Category...</option>
+          </select>
+          <label><input type="checkbox" id="noteRecurring"> Repeat yearly</label>
+        </div>
+
+        <!-- Custom Category Creator & Management Box -->
+        <div class="custom-cat-box" id="customCatBox">
+          <div class="custom-cat-inputs">
+            <input type="text" id="customCatEmoji" placeholder="✨" maxlength="4" title="Category Emoji">
+            <input type="text" id="customCatName" placeholder="Category Name (e.g. Hobbies)">
+            <input type="color" id="customCatColor" value="#a29bfe">
+            <button type="button" id="saveCustomCatBtn">Save</button>
+          </div>
+          <div class="custom-cat-list" id="customCatList"></div>
+        </div>
+
+        <button class="add-note-btn" id="addNoteBtn">Save Event / Note</button>
+      </div>
+
+      <!-- Events List Displayed Below Header/Hidden Section -->
+      <ul class="event-list" id="eventList"></ul>
+    </div>
+
+    <!-- Settings Menu Drawer -->
+    <div class="settings" id="settingsPanel">
+      <h3>Quick Themes (12 Presets)</h3>
+      <div class="theme-row" id="themeRow"></div>
+
+      <h3>Preferences</h3>
+      <div class="toggle-row">
+        <label for="timeFormatToggle">24-Hour Time Format</label>
+        <label class="switch">
+          <input type="checkbox" id="timeFormatToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <label for="autoMarkToggle">Auto Mark Today</label>
+        <label class="switch">
+          <input type="checkbox" id="autoMarkToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <h3>Custom Colors</h3>
+      <div class="color-pickers">
+        <div class="picker-group"><label>Accent</label><input type="color" id="cAccent" value="#6c5ce7"></div>
+        <div class="picker-group"><label>Today</label><input type="color" id="cToday" value="#00cec9"></div>
+        <div class="picker-group"><label>Mark</label><input type="color" id="cMark" value="#ff7675"></div>
+        <div class="picker-group"><label>Event / Badge</label><input type="color" id="cEvent" value="#fdcb6e"></div>
+        <div class="picker-group"><label>Day Border</label><input type="color" id="cBorder" value="#2a2a35"></div>
+        <div class="picker-group"><label>Day Text</label><input type="color" id="cDayText" value="#e8e8ed"></div>
+        <div class="picker-group"><label>Day Background</label><input type="color" id="cDayBg" value="#16161e"></div>
+        <div class="picker-group"><label>Muted Text</label><input type="color" id="cMuted" value="#8b8b9a"></div>
+      </div>
+
+      <h3>Font Library (40+ Fonts)</h3>
+      <div class="font-select">
+        <select id="fontSelect">
+          <option value="Poppins, sans-serif">Poppins (Clean Sans)</option>
+          <option value="Inter, sans-serif">Inter (Modern Sans)</option>
+          <option value="Outfit, sans-serif">Outfit (Trendy)</option>
+          <option value="Manrope, sans-serif">Manrope (Minimalist)</option>
+          <option value="Quicksand, sans-serif">Quicksand (Rounded)</option>
+          <option value="Nunito, sans-serif">Nunito (Soft)</option>
+          <option value="Comfortaa, cursive">Comfortaa (Rounded Tech)</option>
+          <option value="Fredoka, sans-serif">Fredoka (Playful)</option>
+          <option value="Caveat, cursive">Caveat (Handwritten)</option>
+          <option value="Kalam, cursive">Kalam (Casual Hand)</option>
+          <option value="Patrick Hand, cursive">Patrick Hand (Neat Hand)</option>
+          <option value="Permanent Marker, cursive">Permanent Marker (Bold Hand)</option>
+          <option value="Pacifico, cursive">Pacifico (Script)</option>
+          <option value="Dancing Script, cursive">Dancing Script (Elegant Script)</option>
+          <option value="Great Vibes, cursive">Great Vibes (Calligraphy)</option>
+          <option value="Satisfy, cursive">Satisfy (Fluid Script)</option>
+          <option value="Lobster, cursive">Lobster (Retro Script)</option>
+          <option value="Bangers, cursive">Bangers (Comic / Loud)</option>
+          <option value="Orbitron, sans-serif">Orbitron (Futuristic Tech)</option>
+          <option value="Audiowide, cursive">Audiowide (Cyberpunk)</option>
+          <option value="Cinzel, serif">Cinzel (Classic Serif)</option>
+          <option value="Playfair Display, serif">Playfair Display (High Fashion)</option>
+          <option value="Merriweather, serif">Merriweather (Readability Serif)</option>
+          <option value="'Segoe UI', system-ui, sans-serif">Segoe UI (Default System)</option>
+        </select>
+      </div>
+
+      <h3>UI Scale</h3>
+      <div class="slider-group">
+        <label><span>Zoom</span><span id="scaleVal">100%</span></label>
+        <input type="range" id="scaleSlider" min="70" max="140" value="100">
+      </div>
+
+      <h3>Month Photo Settings</h3>
+      <div class="photo-mode-row">
+        <button class="mode-btn" data-mode="monthly">Monthly</button>
+        <button class="mode-btn" data-mode="random">Random</button>
+        <button class="mode-btn" data-mode="custom">Custom</button>
+      </div>
+      <div class="slider-group" id="randomGroup" style="display:none;">
+        <label><span>Change interval</span><span id="intervalVal">30s</span></label>
+        <input type="range" id="intervalSlider" min="10" max="120" value="30">
+      </div>
+      <button class="upload-month-btn" id="uploadMonthBtn">📷 Upload Custom Photo</button>
+      <input type="file" id="monthPhotoInput" accept="image/*">
+
+      <button class="install-btn" id="installBtn">Install as App</button>
+      <button class="reset-btn" id="resetTheme">Reset All Styles</button>
+    </div>
+
+    <div class="footer">• Desktop Calendar V12 •</div>
+  </div>
+
+<script>
+  let current = new Date(), selected = new Date();
+  let marks = JSON.parse(localStorage.getItem('cal_marks') || '{}');
+  let notes = JSON.parse(localStorage.getItem('cal_notes') || '{}');
+  let recurring = JSON.parse(localStorage.getItem('cal_recurring') || '[]');
+  let customCategories = JSON.parse(localStorage.getItem('cal_custom_categories') || '[]');
+  let theme = JSON.parse(localStorage.getItem('cal_theme') || '{}');
+  let settings = JSON.parse(localStorage.getItem('cal_settings') || '{}');
+  let monthPhotos = JSON.parse(localStorage.getItem('cal_monthPhotos') || '{}');
+  let deferredPrompt = null;
+  let randomTimer = null;
+  let lastClockSec = -1;
+
+  let activeStyles = { bold: false, italic: false, strike: false };
+
+  if (!settings.photoMode) settings.photoMode = 'monthly';
+  if (!settings.randomInterval) settings.randomInterval = 30;
+  if (!settings.scale) settings.scale = 100;
+  if (settings.use24Hour === undefined) settings.use24Hour = false;
+  if (settings.autoMarkToday === undefined) settings.autoMarkToday = false;
+
+  const presets = [
+    {name:'Purple',accent:'#6c5ce7',today:'#00cec9',mark:'#ff7675',event:'#fdcb6e',border:'#2a2a35',dayText:'#e8e8ed',dayBg:'#16161e',muted:'#8b8b9a'},
+    {name:'Ocean',accent:'#0984e3',today:'#00b894',mark:'#e17055',event:'#fdcb6e',border:'#1e3a5f',dayText:'#e8e8ed',dayBg:'#0f1c2e',muted:'#7a9bb8'},
+    {name:'Forest',accent:'#00b894',today:'#55efc4',mark:'#d63031',event:'#ffeaa7',border:'#1a3c34',dayText:'#e8e8ed',dayBg:'#0f2a24',muted:'#7aa89a'},
+    {name:'Sunset',accent:'#e17055',today:'#fdcb6e',mark:'#d63031',event:'#a29bfe',border:'#3d2a22',dayText:'#e8e8ed',dayBg:'#2a1a14',muted:'#b89a8a'},
+    {name:'Night',accent:'#636e72',today:'#74b9ff',mark:'#ff7675',event:'#a29bfe',border:'#2d3436',dayText:'#dfe6e9',dayBg:'#1e272e',muted:'#636e72'},
+    {name:'Rose',accent:'#e84393',today:'#fd79a8',mark:'#d63031',event:'#ffeaa7',border:'#3d1f2e',dayText:'#e8e8ed',dayBg:'#2a1520',muted:'#b87a9a'},
+    {name:'Neon Cyber',accent:'#00ffcc',today:'#ff007f',mark:'#ff0055',event:'#ffe600',border:'#1f1f3a',dayText:'#ffffff',dayBg:'#0b0c10',muted:'#66fcf1'},
+    {name:'Pastel Lavender',accent:'#b8c0ff',today:'#c8b6ff',mark:'#ffc6ff',event:'#ffd6a5',border:'#3c3b52',dayText:'#f1f1f1',dayBg:'#22223b',muted:'#9a8c98'},
+    {name:'Gold Luxury',accent:'#d4af37',today:'#f3e5ab',mark:'#e63946',event:'#f4a261',border:'#332d18',dayText:'#fefae0',dayBg:'#1a1810',muted:'#b5a366'},
+    {name:'Emerald',accent:'#2ec4b6',today:'#cbf3f0',mark:'#e71d36',event:'#ff9f1c',border:'#173d38',dayText:'#ffffff',dayBg:'#091e1c',muted:'#70a49e'},
+    {name:'Minimal Slate',accent:'#8a99ad',today:'#cbd5e1',mark:'#f87171',event:'#fbbf24',border:'#334155',dayText:'#f8fafc',dayBg:'#0f172a',muted:'#64748b'},
+    {name:'High Contrast',accent:'#ffff00',today:'#00ffff',mark:'#ff0000',event:'#ff00ff',border:'#444444',dayText:'#ffffff',dayBg:'#000000',muted:'#aaaaaa'}
+  ];
+
+  /* CALCULATE CONTRAST COLOR (DARK OR LIGHT TEXT ON BACKGROUND COLOR) */
+  function getContrastYIQ(hexcolor){
+    if(!hexcolor || hexcolor.charAt(0) !== '#') return '#ffffff';
+    let hex = hexcolor.replace('#', '');
+    if(hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+    const r = parseInt(hex.substr(0,2),16);
+    const g = parseInt(hex.substr(2,2),16);
+    const b = parseInt(hex.substr(4,2),16);
+    const yiq = ((r*299)+(g*587)+(b*114))/1000;
+    return (yiq >= 140) ? '#111111' : '#ffffff';
+  }
+
+  function key(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+  function monthKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+  function save(){
+    localStorage.setItem('cal_marks', JSON.stringify(marks));
+    localStorage.setItem('cal_notes', JSON.stringify(notes));
+    localStorage.setItem('cal_recurring', JSON.stringify(recurring));
+    localStorage.setItem('cal_custom_categories', JSON.stringify(customCategories));
+    localStorage.setItem('cal_theme', JSON.stringify(theme));
+    localStorage.setItem('cal_settings', JSON.stringify(settings));
+    localStorage.setItem('cal_monthPhotos', JSON.stringify(monthPhotos));
+  }
+
+  function applyTheme(){
+    const t = {
+      accent:'#6c5ce7', today:'#00cec9', mark:'#ff7675', event:'#fdcb6e',
+      border:'#2a2a35', dayText:'#e8e8ed', dayBg:'#16161e', muted:'#8b8b9a',
+      font: "Poppins, sans-serif", ...theme
+    };
+
+    const accentTextColor = getContrastYIQ(t.accent);
+    const todayTextColor = getContrastYIQ(t.today);
+    const eventTextColor = getContrastYIQ(t.event);
+
+    document.documentElement.style.setProperty('--accent', t.accent);
+    document.documentElement.style.setProperty('--accent-text', accentTextColor);
+    document.documentElement.style.setProperty('--today', t.today);
+    document.documentElement.style.setProperty('--today-text', todayTextColor);
+    document.documentElement.style.setProperty('--mark', t.mark);
+    document.documentElement.style.setProperty('--event', t.event);
+    document.documentElement.style.setProperty('--event-text', eventTextColor);
+    document.documentElement.style.setProperty('--day-border', t.border);
+    document.documentElement.style.setProperty('--day-text', t.dayText);
+    document.documentElement.style.setProperty('--day-bg', t.dayBg);
+    document.documentElement.style.setProperty('--muted', t.muted);
+    document.documentElement.style.setProperty('--font', t.font);
+
+    const header = document.querySelector('.header');
+    if (header) header.style.background = `linear-gradient(135deg, ${t.accent}, color-mix(in srgb, ${t.accent} 65%, #a29bfe))`;
+
+    document.getElementById('cAccent').value = t.accent;
+    document.getElementById('cToday').value = t.today;
+    document.getElementById('cMark').value = t.mark;
+    document.getElementById('cEvent').value = t.event;
+    document.getElementById('cBorder').value = t.border;
+    document.getElementById('cDayText').value = t.dayText;
+    document.getElementById('cDayBg').value = t.dayBg;
+    document.getElementById('cMuted').value = t.muted;
+    document.getElementById('fontSelect').value = t.font;
+  }
+
+  function applyScale(){
+    const s = settings.scale || 100;
+    document.documentElement.style.setProperty('--scale', s/100);
+    document.getElementById('scaleSlider').value = s;
+    document.getElementById('scaleVal').textContent = s + '%';
+  }
+
+  function loadMonthPhoto(){
+    const mk = monthKey(current);
+    const img = document.getElementById('monthPhoto');
+    clearInterval(randomTimer);
+
+    if (settings.photoMode === 'custom' && monthPhotos[mk]) {
+      img.src = monthPhotos[mk];
+      return;
+    }
+    if (settings.photoMode === 'random') {
+      img.src = `https://picsum.photos/800/400?random=${Date.now()}`;
+      randomTimer = setInterval(() => {
+        img.src = `https://picsum.photos/800/400?random=${Date.now()}`;
+      }, (settings.randomInterval || 30) * 1000);
+      return;
+    }
+    const seed = current.getFullYear() * 100 + (current.getMonth() + 1);
+    img.src = `https://picsum.photos/seed/${seed}/800/400`;
+  }
+
+  function renderCustomCategoriesUI(){
+    const select = document.getElementById('eventCategory');
+    const existingCustoms = select.querySelectorAll('.custom-opt');
+    existingCustoms.forEach(opt => opt.remove());
+
+    const newOpt = select.querySelector('option[value="__NEW__"]');
+
+    customCategories.forEach((cat, idx) => {
+      const opt = document.createElement('option');
+      opt.value = cat.color;
+      opt.textContent = `${cat.emoji || '📌'} ${cat.name}`;
+      opt.className = 'custom-opt';
+      select.insertBefore(opt, newOpt);
+    });
+
+    const listContainer = document.getElementById('customCatList');
+    listContainer.innerHTML = '';
+    customCategories.forEach((cat, idx) => {
+      const item = document.createElement('div');
+      item.className = 'cat-item';
+      item.innerHTML = `
+        <div class="cat-item-info">
+          <span class="cat-item-color" style="background:${cat.color}"></span>
+          <span>${cat.emoji || '📌'} ${cat.name}</span>
+        </div>
+        <button class="delete-cat-btn" data-idx="${idx}" title="Delete Category">×</button>
+      `;
+      listContainer.appendChild(item);
+    });
+
+    listContainer.querySelectorAll('.delete-cat-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const index = parseInt(e.target.dataset.idx, 10);
+        customCategories.splice(index, 1);
+        save();
+        renderCustomCategoriesUI();
+      });
+    });
+  }
+
+  function getNotesForDate(date){
+    const k = key(date);
+    const list = notes[k] ? [...notes[k]] : [];
+    recurring.forEach(r => {
+      if (r.month === date.getMonth()+1 && r.day === date.getDate()) {
+        if (!list.find(n => n.id === r.id)) {
+          list.push({ ...r, recurring: true });
+        }
+      }
+    });
+    return list;
+  }
+
+  /* HIGH-PRECISION SMOOTH CLOCK LOOP */
+  function startSmoothClock(){
+    function tick(){
+      const now = new Date();
+      const seconds = now.getSeconds();
+
+      if (seconds !== lastClockSec) {
+        lastClockSec = seconds;
+        document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', {
+          hour12: !settings.use24Hour,
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+        document.getElementById('fullDate').textContent = now.toLocaleDateString('en-US', {
+          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        });
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function render(){
+    const year = current.getFullYear(), month = current.getMonth();
+    document.getElementById('monthYear').textContent = current.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const daysInPrev = new Date(year, month, 0).getDate();
+
+    const grid = document.getElementById('daysGrid');
+    grid.innerHTML = '';
+
+    for (let i = firstDay-1; i >= 0; i--) {
+      grid.appendChild(createDayCell(new Date(year, month-1, daysInPrev - i), true));
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      grid.appendChild(createDayCell(new Date(year, month, d), false));
+    }
+    const remaining = 42 - grid.children.length;
+    for (let d = 1; d <= remaining; d++) {
+      grid.appendChild(createDayCell(new Date(year, month+1, d), true));
+    }
+
+    updatePanel();
+    loadMonthPhoto();
+    renderCustomCategoriesUI();
+  }
+
+  function createDayCell(date, other){
+    const cell = document.createElement('div');
+    cell.className = 'day';
+    if (other) cell.classList.add('other-month');
+
+    const today = new Date();
+    const isToday = date.toDateString() === today.toDateString();
+    if (isToday) cell.classList.add('today');
+    if (date.toDateString() === selected.toDateString()) cell.classList.add('selected');
+
+    const k = key(date);
+    if (marks[k] || (settings.autoMarkToday && isToday)) {
+      cell.classList.add('marked');
+      if (typeof marks[k] === 'string') {
+        cell.style.setProperty('--mark-color', marks[k]);
+      } else {
+        cell.style.removeProperty('--mark-color');
+      }
+    }
+
+    const dayNotes = getNotesForDate(date);
+    let html = `<div class="day-num">${date.getDate()}</div>`;
+
+    const allEmojis = dayNotes.map(n => n.emoji).filter(Boolean).join('');
+    if (allEmojis) {
+      const limitedEmojis = Array.from(allEmojis).slice(0, 4).join('');
+      html += `<div class="day-emoji">${limitedEmojis}</div>`;
+    }
+
+    if (dayNotes.length > 0) {
+      html += `<div class="day-badge">${dayNotes.length}</div>`;
+    }
+
+    cell.innerHTML = html;
+    cell.addEventListener('click', () => {
+      selected = new Date(date);
+      current = new Date(date.getFullYear(), date.getMonth(), 1);
+      render();
+    });
+    return cell;
+  }
+
+  function formatTextSpan(text, styles){
+    let css = [];
+    if (styles?.bold) css.push('font-weight: bold;');
+    if (styles?.italic) css.push('font-style: italic;');
+    if (styles?.strike) css.push('text-decoration: line-through;');
+    
+    return `<span style="${css.join(' ')}">${text}</span>`;
+  }
+
+  function updatePanel(){
+    const k = key(selected);
+    document.getElementById('panelDate').textContent = selected.toLocaleDateString('en-US', {
+      weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+    });
+
+    const markBtn = document.getElementById('markBtn');
+    const markPicker = document.getElementById('markColorPicker');
+
+    if (marks[k]) {
+      markBtn.classList.add('active');
+      markBtn.textContent = 'Unmark';
+      if (typeof marks[k] === 'string') {
+        markPicker.value = marks[k];
+      }
+    } else {
+      markBtn.classList.remove('active');
+      markBtn.textContent = 'Mark Day';
+    }
+
+    const list = document.getElementById('eventList');
+    list.innerHTML = '';
+    const dayNotes = getNotesForDate(selected);
+
+    dayNotes.forEach(n => {
+      const li = document.createElement('li');
+      li.className = 'event-item';
+      
+      const formattedText = formatTextSpan(n.text, n.styles);
+
+      li.innerHTML = `
+        <div class="event-text">
+          ${n.emoji ? `<span class="event-emoji">${n.emoji}</span>` : ''}
+          <span style="border-left: 3px solid ${n.categoryColor || 'var(--event)'}; padding-left: 6px;">${formattedText}</span>
+          ${n.recurring ? '<div class="event-recurring">Repeats every year</div>' : ''}
+        </div>
+        <button class="delete-event" data-id="${n.id}">×</button>`;
+      list.appendChild(li);
+    });
+
+    list.querySelectorAll('.delete-event').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        if (notes[k]) {
+          notes[k] = notes[k].filter(n => n.id !== id);
+          if (!notes[k].length) delete notes[k];
+        }
+        recurring = recurring.filter(r => r.id !== id);
+        save();
+        render();
+      });
+    });
+  }
+
+  function executeSearch(){
+    const query = document.getElementById('searchBox').value.toLowerCase().trim();
+    const resultsContainer = document.getElementById('searchResults');
+    resultsContainer.innerHTML = '';
+    if (!query) return;
+
+    const matches = [];
+
+    Object.keys(notes).forEach(dateStr => {
+      notes[dateStr].forEach(n => {
+        if (dateStr.includes(query) || n.text.toLowerCase().includes(query) || (n.emoji && n.emoji.includes(query))) {
+          matches.push({ date: new Date(dateStr + 'T00:00:00'), text: n.text, emoji: n.emoji || '' });
+        }
+      });
+    });
+
+    recurring.forEach(r => {
+      if (r.text.toLowerCase().includes(query) || (r.emoji && r.emoji.includes(query))) {
+        const matchDate = new Date(current.getFullYear(), r.month - 1, r.day);
+        matches.push({ date: matchDate, text: r.text + ' (Yearly)', emoji: r.emoji || '' });
+      }
+    });
+
+    if (matches.length === 0) {
+      resultsContainer.innerHTML = `<div class="search-item">No matching dates or notes found.</div>`;
+      return;
+    }
+
+    matches.slice(0, 8).forEach(m => {
+      const item = document.createElement('div');
+      item.className = 'search-item';
+      item.innerHTML = `<span><strong>${m.date.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}</strong>: ${m.emoji} ${m.text}</span>`;
+      item.addEventListener('click', () => {
+        selected = new Date(m.date);
+        current = new Date(m.date.getFullYear(), m.date.getMonth(), 1);
+        resultsContainer.innerHTML = '';
+        document.getElementById('searchBox').value = '';
+        render();
+      });
+      resultsContainer.appendChild(item);
+    });
+  }
+
+  /* TOGGLE NOTE CREATION FORM */
+  const toggleFormBtn = document.getElementById('toggleFormBtn');
+  const noteForm = document.getElementById('noteForm');
+
+  toggleFormBtn.addEventListener('click', () => {
+    noteForm.classList.toggle('open');
+    toggleFormBtn.classList.toggle('active', noteForm.classList.contains('open'));
+    toggleFormBtn.textContent = noteForm.classList.contains('open') ? 'Close Form' : '+ Add Event';
+  });
+
+  /* TEXT FORMATTING TOGGLES */
+  function setupTextStyleButtons(){
+    const bBtn = document.getElementById('btnBold');
+    const iBtn = document.getElementById('btnItalic');
+    const sBtn = document.getElementById('btnStrike');
+
+    bBtn.addEventListener('click', () => {
+      activeStyles.bold = !activeStyles.bold;
+      bBtn.classList.toggle('active', activeStyles.bold);
+    });
+
+    iBtn.addEventListener('click', () => {
+      activeStyles.italic = !activeStyles.italic;
+      iBtn.classList.toggle('active', activeStyles.italic);
+    });
+
+    sBtn.addEventListener('click', () => {
+      activeStyles.strike = !activeStyles.strike;
+      sBtn.classList.toggle('active', activeStyles.strike);
+    });
+  }
+
+  /* CUSTOM CATEGORIES HANDLER */
+  document.getElementById('eventCategory').addEventListener('change', (e) => {
+    const box = document.getElementById('customCatBox');
+    if (e.target.value === '__NEW__') {
+      box.classList.add('open');
+    } else {
+      box.classList.remove('open');
+    }
+  });
+
+  document.getElementById('saveCustomCatBtn').addEventListener('click', () => {
+    const emojiInput = document.getElementById('customCatEmoji');
+    const nameInput = document.getElementById('customCatName');
+    const colorInput = document.getElementById('customCatColor');
+    
+    const emoji = emojiInput.value.trim() || '📌';
+    const name = nameInput.value.trim();
+    const color = colorInput.value;
+
+    if (!name) return;
+
+    customCategories.push({ name, emoji, color });
+    save();
+    renderCustomCategoriesUI();
+
+    document.getElementById('eventCategory').value = color;
+    nameInput.value = '';
+    emojiInput.value = '';
+  });
+
+  /* EMOJI FILTER FOR INPUT FIELDS */
+  document.getElementById('noteEmoji').addEventListener('input', (e) => {
+    const emojis = e.target.value.match(/\p{Extended_Pictographic}/gu);
+    e.target.value = emojis ? emojis.join('') : '';
+  });
+
+  document.getElementById('customCatEmoji').addEventListener('input', (e) => {
+    const emojis = e.target.value.match(/\p{Extended_Pictographic}/gu);
+    e.target.value = emojis ? emojis.join('') : '';
+  });
+
+  document.getElementById('searchBtn').addEventListener('click', executeSearch);
+  document.getElementById('searchBox').addEventListener('keyup', () => executeSearch());
+
+  document.getElementById('prevMonth').addEventListener('click', () => {
+    current.setMonth(current.getMonth()-1); render();
+  });
+  document.getElementById('nextMonth').addEventListener('click', () => {
+    current.setMonth(current.getMonth()+1); render();
+  });
+
+  document.getElementById('markBtn').addEventListener('click', () => {
+    const k = key(selected);
+    const color = document.getElementById('markColorPicker').value;
+    if (marks[k]) {
+      delete marks[k];
+    } else {
+      marks[k] = color;
+    }
+    save(); render();
+  });
+
+  document.getElementById('markColorPicker').addEventListener('input', (e) => {
+    const k = key(selected);
+    if (marks[k]) {
+      marks[k] = e.target.value;
+      save(); render();
+    }
+  });
+
+  document.getElementById('addNoteBtn').addEventListener('click', () => {
+    const text = document.getElementById('noteText').value.trim();
+    if (!text) return;
+    const emoji = document.getElementById('noteEmoji').value.trim();
+    let categoryColor = document.getElementById('eventCategory').value;
+    if (categoryColor === '__NEW__') categoryColor = '#fdcb6e';
+
+    const isRecurring = document.getElementById('noteRecurring').checked;
+    const id = uid();
+    const styles = { ...activeStyles };
+
+    if (isRecurring) {
+      recurring.push({
+        id, text, emoji, categoryColor, styles,
+        month: selected.getMonth()+1,
+        day: selected.getDate()
+      });
+    } else {
+      const k = key(selected);
+      if (!notes[k]) notes[k] = [];
+      notes[k].push({ id, text, emoji, categoryColor, styles });
+    }
+
+    document.getElementById('noteText').value = '';
+    document.getElementById('noteEmoji').value = '';
+    document.getElementById('noteRecurring').checked = false;
+
+    activeStyles = { bold: false, italic: false, strike: false };
+    document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+
+    /* Close creation form on successful save */
+    noteForm.classList.remove('open');
+    toggleFormBtn.classList.remove('active');
+    toggleFormBtn.textContent = '+ Add Event';
+
+    save();
+    render();
+  });
+
+  document.getElementById('settingsBtn').addEventListener('click', () => {
+    document.getElementById('settingsPanel').classList.toggle('open');
+  });
+
+  /* SETUP TOGGLE SWITCHES */
+  const timeFormatToggle = document.getElementById('timeFormatToggle');
+  timeFormatToggle.checked = settings.use24Hour;
+  timeFormatToggle.addEventListener('change', e => {
+    settings.use24Hour = e.target.checked;
+    save();
+  });
+
+  const autoMarkToggle = document.getElementById('autoMarkToggle');
+  autoMarkToggle.checked = settings.autoMarkToday;
+  autoMarkToggle.addEventListener('change', e => {
+    settings.autoMarkToday = e.target.checked;
+    save();
+    render();
+  });
+
+  const themeRow = document.getElementById('themeRow');
+  presets.forEach(p => {
+    const sw = document.createElement('div');
+    sw.className = 'theme-swatch';
+    sw.style.background = `linear-gradient(135deg, ${p.accent}, ${p.today})`;
+    sw.title = p.name;
+    sw.addEventListener('click', () => {
+      theme = { ...p };
+      applyTheme(); save();
+    });
+    themeRow.appendChild(sw);
+  });
+
+  const colorMap = {
+    cAccent: 'accent', cToday: 'today', cMark: 'mark', cEvent: 'event',
+    cBorder: 'border', cDayText: 'dayText', cDayBg: 'dayBg', cMuted: 'muted'
+  };
+  Object.keys(colorMap).forEach(id => {
+    document.getElementById(id).addEventListener('input', e => {
+      theme[colorMap[id]] = e.target.value;
+      applyTheme(); save();
+    });
+  });
+
+  document.getElementById('fontSelect').addEventListener('change', e => {
+    theme.font = e.target.value;
+    applyTheme(); save();
+  });
+
+  document.getElementById('scaleSlider').addEventListener('input', e => {
+    settings.scale = +e.target.value;
+    applyScale(); save();
+  });
+
+  document.getElementById('resetTheme').addEventListener('click', () => {
+    theme = {};
+    applyTheme(); save();
+  });
+
+  function updatePhotoUI(){
+    document.querySelectorAll('.mode-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === settings.photoMode);
+    });
+    document.getElementById('randomGroup').style.display = settings.photoMode === 'random' ? 'block' : 'none';
+    document.getElementById('intervalSlider').value = settings.randomInterval || 30;
+    document.getElementById('intervalVal').textContent = (settings.randomInterval || 30) + 's';
+  }
+
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      settings.photoMode = btn.dataset.mode;
+      updatePhotoUI(); save(); loadMonthPhoto();
+    });
+  });
+
+  document.getElementById('intervalSlider').addEventListener('input', e => {
+    settings.randomInterval = +e.target.value;
+    document.getElementById('intervalVal').textContent = settings.randomInterval + 's';
+    save(); loadMonthPhoto();
+  });
+
+  document.getElementById('uploadMonthBtn').addEventListener('click', () => {
+    document.getElementById('monthPhotoInput').click();
+  });
+  document.getElementById('monthPhotoInput').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      monthPhotos[monthKey(current)] = reader.result;
+      settings.photoMode = 'custom';
+      updatePhotoUI(); save(); loadMonthPhoto();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (isStandalone) document.getElementById('installBtn').style.display = 'none';
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (!isStandalone) document.getElementById('installBtn').style.display = 'block';
+  });
+  window.addEventListener('appinstalled', () => {
+    document.getElementById('installBtn').style.display = 'none';
+    deferredPrompt = null;
+  });
+  document.getElementById('installBtn').addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') document.getElementById('installBtn').style.display = 'none';
+    deferredPrompt = null;
+  });
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(reg => reg.update()).catch(() => {});
+  }
+
+  setupTextStyleButtons();
+  applyTheme();
+  applyScale();
+  updatePhotoUI();
+  startSmoothClock();
+  render();
+</script>
+</body>
+</html>
