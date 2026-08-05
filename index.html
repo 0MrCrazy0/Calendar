@@ -52,13 +52,13 @@
   html {
     min-height: 100%;
     min-height: 100dvh;
-    background: var(--bg);
+    background-color: var(--bg);
   }
 
   html, body {
     min-height: 100%;
     min-height: 100dvh;
-    background: var(--bg);
+    background-color: var(--bg);
     color: var(--text);
     font-family: var(--font);
     overscroll-behavior-y: none;
@@ -71,9 +71,19 @@
     padding: 12px;
     padding-bottom: max(24px, env(safe-area-inset-bottom));
     overflow-y: auto;
-    /* Grow with content so theme bg fills past the viewport when the list is long */
     min-height: 100%;
     min-height: 100dvh;
+    position: relative;
+  }
+
+  /* Full-viewport page background (mobile: fills behind long calendar / overscroll) */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-color: var(--bg);
+    pointer-events: none;
   }
 
   .app {
@@ -1474,6 +1484,7 @@
   if (settings.soundVolume === undefined) settings.soundVolume = 85;
   if (settings.weekStartMonday === undefined) settings.weekStartMonday = false;
   if (!settings.language) settings.language = 'en';
+  if (!settings.markBrushColor) settings.markBrushColor = '#ff7675';
   let editingId = null; // for edit mode
   let alarmAudio = null;
   let alarmStopTimer = null;
@@ -1946,9 +1957,15 @@
     setVal('cPanel', tTheme.panel);
     setVal('fontSelect', tTheme.font);
 
-    // Keep the day-panel mark color picker in sync with the theme default
+    // Explicit paint for mobile browsers (variable alone can leave a black strip)
+    document.documentElement.style.backgroundColor = tTheme.bg;
+    document.body.style.backgroundColor = tTheme.bg;
+
+    // Mark Day brush is independent of theme "Mark" colour — restore saved brush only
     const markPicker = document.getElementById('markColorPicker');
-    if (markPicker) markPicker.value = tTheme.mark;
+    if (markPicker && settings.markBrushColor) {
+      markPicker.value = settings.markBrushColor;
+    }
   }
 
   // Design width of the calendar card (px). Scale grows/shrinks from this.
@@ -2682,6 +2699,8 @@
       } else {
         markBtn.classList.remove('active');
         markBtn.textContent = t('markDay');
+        // Show last brush colour (not theme mark) for the next mark
+        markPicker.value = settings.markBrushColor || '#ff7675';
       }
     }
 
@@ -3069,6 +3088,7 @@
       return;
     }
     const color = document.getElementById('markColorPicker').value;
+    settings.markBrushColor = color;
     if (marks[k]) {
       delete marks[k];
     } else {
@@ -3079,11 +3099,14 @@
 
   document.getElementById('markColorPicker').addEventListener('input', (e) => {
     const k = key(selected);
-    // Allow recolouring existing user marks (including past); ignore if no mark
+    // Always remember brush colour (survives theme changes + backup/restore)
+    settings.markBrushColor = e.target.value;
+    // Recolour existing user mark on this day if present
     if (marks[k]) {
       marks[k] = e.target.value;
-      save(); render();
     }
+    save();
+    if (marks[k]) render();
   });
 
   document.getElementById('addNoteBtn').addEventListener('click', () => {
@@ -3635,6 +3658,10 @@
         renderSavedThemes();
         updateNotifyPermUI();
         updateNoteTimePreview();
+        if (!settings.markBrushColor) settings.markBrushColor = (theme && theme.mark) || '#ff7675';
+        const mp = document.getElementById('markColorPicker');
+        if (mp) mp.value = settings.markBrushColor;
+        applyTheme();
         render();
         alert('Data imported successfully!');
       } catch (err) {
