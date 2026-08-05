@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-title" content="Calendar">
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%236c5ce7'/%3E%3Ctext y='.9em' font-size='70' x='50%25' text-anchor='middle' fill='white'%3E📅%3C/text%3E%3C/svg%3E">
 
-  <title>Desktop Calendar V12.1</title>
+  <title>Simple Calendar</title>
   <link rel="manifest" href="manifest.json">
 
   <!-- Google Fonts Preconnect -->
@@ -25,6 +25,7 @@
   :root {
     --bg: #0f0f13;
     --card: #16161e;
+    --panel: #12121a;
     --text: #e8e8ed;
     --muted: #8b8b9a;
     --accent: #6c5ce7;
@@ -91,7 +92,7 @@
   .picture-canvas-container img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     object-position: center;
     display: block;
   }
@@ -356,7 +357,7 @@
   .day-panel {
     padding: 12px 14px 14px;
     border-top: 1px solid rgba(255, 255, 255, 0.09);
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--panel);
   }
 
   .panel-header {
@@ -687,7 +688,7 @@
     display: none;
     padding: 14px;
     border-top: 1px solid rgba(255, 255, 255, 0.09);
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--panel);
     max-height: 520px;
     overflow-y: auto;
   }
@@ -736,7 +737,8 @@
     margin-bottom: 6px;
   }
 
-  .toggle-row label {
+  .toggle-row label,
+  .toggle-row > span {
     font-size: 12px;
     color: var(--text);
   }
@@ -946,6 +948,113 @@
       padding-top: env(safe-area-inset-top);
     }
   }
+
+  /* IN-APP TOAST NOTIFICATION (matches app style) */
+  #calToast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(120%);
+    z-index: 99999;
+    display: flex;
+    align-items: stretch;
+    min-width: 280px;
+    max-width: min(360px, calc(100vw - 32px));
+    background: var(--card);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.55);
+    overflow: hidden;
+    opacity: 0;
+    transition: transform 0.35s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease;
+    font-family: var(--font);
+    color: var(--text);
+  }
+  #calToast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  .cal-toast-accent {
+    width: 5px;
+    flex-shrink: 0;
+  }
+  .cal-toast-content {
+    flex: 1;
+    padding: 14px 12px 14px 14px;
+  }
+  .cal-toast-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 3px;
+    line-height: 1.3;
+  }
+  .cal-toast-body {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.35;
+  }
+  .cal-toast-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 10px 12px;
+    align-self: flex-start;
+    line-height: 1;
+  }
+  .cal-toast-close:hover {
+    color: var(--text);
+  }
+
+  /* CLEAN PRINT STYLESHEET */
+  @media print {
+    body, .app {
+      background: #fff !important;
+      color: #000 !important;
+      box-shadow: none !important;
+      border: none !important;
+      max-width: 100% !important;
+      transform: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    .picture-canvas-container,
+    .header .settings-btn,
+    .search-bar,
+    #searchResults,
+    .day-panel .panel-actions,
+    .note-form,
+    .settings,
+    .footer,
+    .install-btn,
+    .nav-btn,
+    #todayBtn,
+    .mark-color-picker {
+      display: none !important;
+    }
+    .header {
+      background: #eee !important;
+      color: #000 !important;
+      padding: 8px !important;
+    }
+    .time, .date-line { color: #000 !important; }
+    .days { border: 1px solid #ccc !important; gap: 0 !important; }
+    .day {
+      border: 1px solid #ddd !important;
+      color: #000 !important;
+      background: #fff !important;
+      max-height: none !important;
+      aspect-ratio: auto;
+      min-height: 60px;
+    }
+    .day.today { background: #e0f7fa !important; font-weight: bold; }
+    .day.other-month { opacity: 0.4; }
+    .day-badge { background: #333 !important; color: #fff !important; }
+    .event-list { max-height: none !important; }
+    .event-item { border-bottom: 1px solid #eee !important; color: #000 !important; }
+    .event-actions, .delete-event, .edit-event, .dup-event { display: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -1065,16 +1174,56 @@
 
       <h3 data-i18n="lblPreferences">Preferences</h3>
       <div class="toggle-row">
-        <label for="timeFormatToggle" data-i18n="lbl24Hour">24-Hour Time Format</label>
+        <span data-i18n="lbl24Hour">24-Hour Time Format</span>
         <label class="switch">
           <input type="checkbox" id="timeFormatToggle">
           <span class="slider"></span>
         </label>
       </div>
       <div class="toggle-row">
-        <label for="autoMarkPastToggle" data-i18n="lblAutoMark">Auto Mark Past Days</label>
+        <span data-i18n="lblAutoMark">Auto Mark Past Days</span>
         <label class="switch">
           <input type="checkbox" id="autoMarkPastToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <span data-i18n="lblNotify">Event Notifications</span>
+        <label class="switch">
+          <input type="checkbox" id="notifyToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div id="notifyOptionsGroup" style="display:none;">
+        <div class="slider-group">
+          <label for="notifyDaysSlider"><span data-i18n="lblNotifyDays">Notify days ahead</span><span id="notifyDaysVal">1</span></label>
+          <input type="range" id="notifyDaysSlider" min="0" max="7" value="1">
+        </div>
+        <div class="slider-group">
+          <label for="toastDurationSlider"><span data-i18n="lblToastDuration">Popup stays (seconds)</span><span id="toastDurationVal">8</span></label>
+          <input type="range" id="toastDurationSlider" min="3" max="300" value="8">
+        </div>
+        <div class="toggle-row" style="gap:8px;">
+          <span data-i18n="lblNotifySound" style="flex:1;">Alarm sound</span>
+          <button type="button" id="stopAlarmBtn" data-i18n="btnStopAlarm" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:var(--text);border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;white-space:nowrap;">⏹ Stop</button>
+          <label class="switch">
+            <input type="checkbox" id="soundToggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="slider-group" id="soundDurationGroup">
+          <label for="soundDurationSlider"><span data-i18n="lblSoundDuration">Sound plays (seconds)</span><span id="soundDurationVal">5</span></label>
+          <input type="range" id="soundDurationSlider" min="1" max="60" value="5">
+        </div>
+        <div class="slider-group" id="soundRepeatGroup">
+          <label for="soundRepeatSlider"><span data-i18n="lblSoundRepeat">Repeat alarm (times)</span><span id="soundRepeatVal">1</span></label>
+          <input type="range" id="soundRepeatSlider" min="1" max="5" value="1">
+        </div>
+      </div>
+      <div class="toggle-row">
+        <span data-i18n="lblWeekStart">Week starts on Monday</span>
+        <label class="switch">
+          <input type="checkbox" id="weekStartToggle">
           <span class="slider"></span>
         </label>
       </div>
@@ -1085,19 +1234,42 @@
         <button class="action-setting-btn" id="importJsonBtn" data-i18n="btnRestore">📤 Restore (JSON)</button>
       </div>
       <button class="action-setting-btn" id="exportIcsBtn" data-i18n="btnIcs">📅 Export to .ics (iCal)</button>
+      <button class="action-setting-btn" id="printMonthBtn" data-i18n="btnPrint">🖨️ Print Month</button>
+      <button class="action-setting-btn" id="clearAllBtn" style="border-color:var(--mark);color:var(--mark);margin-top:6px;" data-i18n="btnClearAll">🗑️ Clear All Data</button>
       <input type="file" id="importJsonInput" accept=".json">
 
-      <h3 data-i18n="lblCustomColors">Custom Colors</h3>
+      <h3 data-i18n="lblCustomColors">Build Your Theme</h3>
+      <p style="font-size:11px;color:var(--muted);margin:-4px 0 10px;line-height:1.4;" data-i18n="lblCustomColorsHint">Choose your own colours — works like Quick Themes, but you control every part.</p>
+
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;" data-i18n="lblColorPrimary">App colours</div>
       <div class="color-pickers">
-        <div class="picker-group"><label data-i18n="colAccent">Accent</label><input type="color" id="cAccent" value="#6c5ce7"></div>
-        <div class="picker-group"><label data-i18n="colToday">Today</label><input type="color" id="cToday" value="#00cec9"></div>
-        <div class="picker-group"><label data-i18n="colMark">Mark</label><input type="color" id="cMark" value="#ff7675"></div>
-        <div class="picker-group"><label data-i18n="colEvent">Event / Badge</label><input type="color" id="cEvent" value="#fdcb6e"></div>
-        <div class="picker-group"><label data-i18n="colBorder">Day Border</label><input type="color" id="cBorder" value="#2a2a35"></div>
-        <div class="picker-group"><label data-i18n="colDayText">Day Text</label><input type="color" id="cDayText" value="#e8e8ed"></div>
-        <div class="picker-group"><label data-i18n="colDayBg">Day Background</label><input type="color" id="cDayBg" value="#16161e"></div>
-        <div class="picker-group"><label data-i18n="colMuted">Muted Text</label><input type="color" id="cMuted" value="#8b8b9a"></div>
+        <div class="picker-group"><label for="cAccent" data-i18n="colAccent" title="Header bar, buttons, and selected day ring">Accent</label><input type="color" id="cAccent" value="#6c5ce7" title="Header bar, buttons, and selected day ring"></div>
+        <div class="picker-group"><label for="cToday" data-i18n="colToday" title="Highlight colour for today's date">Today</label><input type="color" id="cToday" value="#00cec9" title="Highlight colour for today's date"></div>
+        <div class="picker-group"><label for="cBg" data-i18n="colBg" title="Background colour behind the calendar">Page background</label><input type="color" id="cBg" value="#0f0f13" title="Background colour behind the calendar"></div>
+        <div class="picker-group"><label for="cCard" data-i18n="colCard" title="Main calendar window colour">App card</label><input type="color" id="cCard" value="#16161e" title="Main calendar window colour"></div>
+        <div class="picker-group"><label for="cPanel" data-i18n="colPanel" title="Background of the day details and settings areas">Panel</label><input type="color" id="cPanel" value="#12121a" title="Background of the day details and settings areas"></div>
+        <div class="picker-group"><label for="cEvent" data-i18n="colEvent" title="Small badge showing how many events are on a day">Event badge</label><input type="color" id="cEvent" value="#fdcb6e" title="Small badge showing how many events are on a day"></div>
       </div>
+
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px;" data-i18n="lblColorGrid">Calendar days</div>
+      <div class="color-pickers">
+        <div class="picker-group"><label for="cDayText" data-i18n="colDayText" title="Colour of the day numbers (1–31)">Day numbers</label><input type="color" id="cDayText" value="#e8e8ed" title="Colour of the day numbers (1–31)"></div>
+        <div class="picker-group"><label for="cDayBg" data-i18n="colDayBg" title="Background fill inside each day square">Day cells</label><input type="color" id="cDayBg" value="#16161e" title="Background fill inside each day square"></div>
+        <div class="picker-group"><label for="cBorder" data-i18n="colBorder" title="Lines between the day squares">Grid lines</label><input type="color" id="cBorder" value="#2a2a35" title="Lines between the day squares"></div>
+        <div class="picker-group"><label for="cMuted" data-i18n="colMuted" title="Weekday labels (Mon, Tue…) and faded other-month days">Secondary text</label><input type="color" id="cMuted" value="#8b8b9a" title="Weekday labels (Mon, Tue…) and faded other-month days"></div>
+      </div>
+
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px;" data-i18n="lblColorMark">Mark colour</div>
+      <p style="font-size:10px;color:var(--muted);margin:0 0 6px;line-height:1.35;" data-i18n="lblMarkHint">Default colour for the Mark Day button and mark dots. You can still choose a different colour for each day using the picker next to Mark Day.</p>
+      <div class="color-pickers" style="grid-template-columns:1fr;">
+        <div class="picker-group"><label for="cMark" data-i18n="colMark" title="Default colour for marks on days">Mark</label><input type="color" id="cMark" value="#ff7675" title="Default colour for marks on days"></div>
+      </div>
+
+      <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <input type="text" id="saveThemeName" maxlength="24" placeholder="Theme name" data-i18n-placeholder="phThemeName" style="flex:1;min-width:120px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.12);color:var(--text);padding:8px 10px;border-radius:8px;font-size:12px;outline:none;">
+        <button type="button" class="action-setting-btn" id="saveThemeBtn" data-i18n="btnSaveTheme" style="width:auto;margin:0;padding:8px 14px;">💾 Save theme</button>
+      </div>
+      <div class="theme-row" id="savedThemesRow" style="margin-top:8px;"></div>
 
       <h3 data-i18n="lblFontLibrary">Font Library (40+ Fonts)</h3>
       <div class="font-select">
@@ -1131,7 +1303,7 @@
 
       <h3 data-i18n="lblUiScale">UI Scale</h3>
       <div class="slider-group">
-        <label><span data-i18n="lblZoom">Zoom</span><span id="scaleVal">100%</span></label>
+        <label for="scaleSlider"><span data-i18n="lblZoom">Zoom</span><span id="scaleVal">100%</span></label>
         <input type="range" id="scaleSlider" min="70" max="140" value="100">
       </div>
 
@@ -1142,7 +1314,7 @@
         <button class="mode-btn" data-mode="custom" data-i18n="modeCustom">Custom</button>
       </div>
       <div class="slider-group" id="randomGroup" style="display:none;">
-        <label><span data-i18n="lblInterval">Change interval</span><span id="intervalVal">30s</span></label>
+        <label for="intervalSlider"><span data-i18n="lblInterval">Change interval</span><span id="intervalVal">30s</span></label>
         <input type="range" id="intervalSlider" min="10" max="120" value="30">
       </div>
       <button class="upload-month-btn" id="uploadMonthBtn" data-i18n="btnUploadPhoto">📷 Upload Custom Photo</button>
@@ -1153,18 +1325,29 @@
       <button class="reset-btn" id="resetTheme" data-i18n="btnReset">Reset All Styles</button>
     </div>
 
-    <div class="footer">• Desktop Calendar V12.1 •</div>
+    <div class="footer">• Simple Calendar •</div>
   </div>
 
 <script>
   let current = new Date(), selected = new Date();
-  let marks = JSON.parse(localStorage.getItem('cal_marks') || '{}');
-  let notes = JSON.parse(localStorage.getItem('cal_notes') || '{}');
-  let recurring = JSON.parse(localStorage.getItem('cal_recurring') || '[]');
-  let customCategories = JSON.parse(localStorage.getItem('cal_custom_categories') || '[]');
-  let theme = JSON.parse(localStorage.getItem('cal_theme') || '{}');
-  let settings = JSON.parse(localStorage.getItem('cal_settings') || '{}');
-  let monthPhotos = JSON.parse(localStorage.getItem('cal_monthPhotos') || '{}');
+  function safeParse(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw === null || raw === undefined) return fallback;
+      return JSON.parse(raw);
+    } catch (e) {
+      console.warn('Corrupt storage for', key, '- resetting');
+      return fallback;
+    }
+  }
+  let marks = safeParse('cal_marks', {});
+  let notes = safeParse('cal_notes', {});
+  let recurring = safeParse('cal_recurring', []);
+  let customCategories = safeParse('cal_custom_categories', []);
+  let theme = safeParse('cal_theme', {});
+  let savedThemes = safeParse('cal_saved_themes', []);
+  let settings = safeParse('cal_settings', {});
+  let monthPhotos = safeParse('cal_monthPhotos', {});
   let deferredPrompt = null;
   let randomTimer = null;
   let lastClockSec = -1;
@@ -1176,7 +1359,17 @@
   if (!settings.scale) settings.scale = 100;
   if (settings.use24Hour === undefined) settings.use24Hour = false;
   if (settings.autoMarkPast === undefined) settings.autoMarkPast = false;
+  if (settings.notifyEnabled === undefined) settings.notifyEnabled = false;
+  if (settings.notifyDaysAhead === undefined) settings.notifyDaysAhead = 1;
+  if (settings.toastDuration === undefined) settings.toastDuration = 8;
+  if (settings.soundEnabled === undefined) settings.soundEnabled = true;
+  if (settings.soundDuration === undefined) settings.soundDuration = 5;
+  if (settings.soundRepeat === undefined) settings.soundRepeat = 1;
+  if (settings.weekStartMonday === undefined) settings.weekStartMonday = false;
   if (!settings.language) settings.language = 'en';
+  let editingId = null; // for edit mode
+  let alarmAudio = null;
+  let alarmStopTimer = null;
 
   /* MULTI-LANGUAGE DICTIONARIES */
   const i18n = {
@@ -1213,19 +1406,48 @@
       lblPreferences: "Preferences",
       lbl24Hour: "24-Hour Time Format",
       lblAutoMark: "Auto Mark Past Days",
+      lblNotify: "Event Notifications",
+      lblNotifyDays: "Notify days ahead",
+      lblToastDuration: "Popup stays (seconds)",
+      lblNotifySound: "Alarm sound",
+      lblSoundDuration: "Sound plays (seconds)",
+      lblSoundRepeat: "Repeat alarm (times)",
+      btnStopAlarm: "⏹ Stop",
+      btnPrint: "🖨️ Print Month",
+      lblWeekStart: "Week starts on Monday",
+      confirmClearBackup: "This will permanently delete ALL marks, notes, recurring events, categories and photos.\n\nDo you want to download a backup first?",
+      confirmClearFinal: "Backup skipped. Are you SURE you want to clear everything? This cannot be undone.",
       lblDataSafety: "Data Safety & Export",
       btnBackup: "📥 Backup (JSON)",
       btnRestore: "📤 Restore (JSON)",
       btnIcs: "📅 Export to .ics (iCal)",
-      lblCustomColors: "Custom Colors",
+      btnClearAll: "🗑️ Clear All Data",
+      editEvent: "Edit",
+      updateEventBtn: "Update Event / Note",
+      confirmClear: "Delete ALL marks, notes, recurring events, custom categories and photos? This cannot be undone.",
+      cleared: "All data cleared.",
+      dupNextWeek: "Duplicate to next week",
+      moveNextWeek: "Move to next week",
+      lblCustomColors: "Build Your Theme",
+      lblCustomColorsHint: "Choose your own colours — works like Quick Themes, but you control every part.",
+      btnSaveTheme: "💾 Save theme",
+      phThemeName: "Theme name",
+      lblNoSavedThemes: "No saved themes yet",
+      lblColorPrimary: "App colours",
+      lblColorGrid: "Calendar days",
+      lblColorMark: "Mark colour",
+      lblMarkHint: "Default colour for the Mark Day button and mark dots. You can still choose a different colour for each day using the picker next to Mark Day.",
       colAccent: "Accent",
       colToday: "Today",
+      colBg: "Page background",
+      colCard: "App card",
+      colPanel: "Panel",
       colMark: "Mark",
-      colEvent: "Event / Badge",
-      colBorder: "Day Border",
-      colDayText: "Day Text",
-      colDayBg: "Day Background",
-      colMuted: "Muted Text",
+      colEvent: "Event badge",
+      colBorder: "Grid lines",
+      colDayText: "Day numbers",
+      colDayBg: "Day cells",
+      colMuted: "Secondary text",
       lblFontLibrary: "Font Library (40+ Fonts)",
       lblUiScale: "UI Scale",
       lblZoom: "Zoom",
@@ -1278,19 +1500,48 @@
       lblPreferences: "Mga Kagustuhan",
       lbl24Hour: "24-Oras na Orasan",
       lblAutoMark: "Awtomatikong Markahan ang Nakaraang Araw",
+      lblNotify: "Mga Notification ng Kaganapan",
+      lblNotifyDays: "Abiso ng mga araw nang maaga",
+      lblToastDuration: "Gaano katagal ang popup (segundo)",
+      lblNotifySound: "Tunog ng alarm",
+      lblSoundDuration: "Gaano katagal ang tunog (segundo)",
+      lblSoundRepeat: "Ulitin ang alarm (beses)",
+      btnStopAlarm: "⏹ Itigil",
+      btnPrint: "🖨️ I-print ang Buwan",
+      lblWeekStart: "Magsimula ang linggo sa Lunes",
+      confirmClearBackup: "Buburahin nito ang LAHAT ng marka, tala, paulit-ulit na kaganapan, kategorya at larawan.\n\nGusto mo bang mag-download muna ng backup?",
+      confirmClearFinal: "Walang backup. SIGURADO ka bang buburahin ang lahat? Hindi na ito maibabalik.",
       lblDataSafety: "Kaligtasan ng Datos & I-export",
       btnBackup: "📥 Backup (JSON)",
       btnRestore: "📤 Ibalik (JSON)",
       btnIcs: "📅 I-export sa .ics (iCal)",
-      lblCustomColors: "Mga Sariling Kulay",
+      btnClearAll: "🗑️ Burahin ang Lahat ng Datos",
+      editEvent: "I-edit",
+      updateEventBtn: "I-update ang Kaganapan / Tala",
+      confirmClear: "Burahin ang LAHAT ng marka, tala, paulit-ulit na kaganapan, kategorya at larawan? Hindi na ito maibabalik.",
+      cleared: "Nabura ang lahat ng datos.",
+      dupNextWeek: "Kopyahin sa susunod na linggo",
+      moveNextWeek: "Ilipat sa susunod na linggo",
+      lblCustomColors: "Gawin ang Iyong Tema",
+      lblCustomColorsHint: "Pumili ng sarili mong mga kulay — tulad ng Quick Themes, pero ikaw ang may kontrol.",
+      btnSaveTheme: "💾 I-save ang tema",
+      phThemeName: "Pangalan ng tema",
+      lblNoSavedThemes: "Wala pang naka-save na tema",
+      lblColorPrimary: "Mga kulay ng app",
+      lblColorGrid: "Mga araw sa kalendaryo",
+      lblColorMark: "Kulay ng marka",
+      lblMarkHint: "Default na kulay para sa Mark Day at mark dots. Maaari pa ring pumili ng ibang kulay sa bawat araw sa tabi ng Mark Day.",
       colAccent: "Accent",
       colToday: "Ngayon",
+      colBg: "Background ng page",
+      colCard: "App card",
+      colPanel: "Panel",
       colMark: "Marka",
-      colEvent: "Kaganapan / Badge",
-      colBorder: "Hangganan ng Araw",
-      colDayText: "Teksto ng Araw",
-      colDayBg: "Background ng Araw",
-      colMuted: "Muted na Teksto",
+      colEvent: "Badge ng kaganapan",
+      colBorder: "Mga linya",
+      colDayText: "Numero ng araw",
+      colDayBg: "Mga cell",
+      colMuted: "Pangalawang teksto",
       lblFontLibrary: "Silid-aklatan ng Font (40+ Font)",
       lblUiScale: "Laki ng UI",
       lblZoom: "Zoom",
@@ -1343,19 +1594,48 @@
       lblPreferences: "Preferanser",
       lbl24Hour: "24-timers tidsformat",
       lblAutoMark: "Automatisk marker tidligere dager",
+      lblNotify: "Hendelsesvarsler",
+      lblNotifyDays: "Varsle dager på forhånd",
+      lblToastDuration: "Popup vises (sekunder)",
+      lblNotifySound: "Alarmlyd",
+      lblSoundDuration: "Lyd spiller (sekunder)",
+      lblSoundRepeat: "Gjenta alarm (ganger)",
+      btnStopAlarm: "⏹ Stopp",
+      btnPrint: "🖨️ Skriv ut måned",
+      lblWeekStart: "Uken starter på mandag",
+      confirmClearBackup: "Dette sletter ALLE merker, notater, gjentakende hendelser, kategorier og bilder.\n\nVil du laste ned en sikkerhetskopi først?",
+      confirmClearFinal: "Ingen sikkerhetskopi. Er du SIKKER på at du vil slette alt? Dette kan ikke angres.",
       lblDataSafety: "Datasikkerhet og Eksport",
       btnBackup: "📥 Sikkerhetskopi (JSON)",
       btnRestore: "📤 Gjenopprett (JSON)",
       btnIcs: "📅 Eksporter til .ics (iCal)",
-      lblCustomColors: "Egendefinerte farger",
+      btnClearAll: "🗑️ Slett alle data",
+      editEvent: "Rediger",
+      updateEventBtn: "Oppdater hendelse / notat",
+      confirmClear: "Slette ALLE merker, notater, gjentakende hendelser, kategorier og bilder? Dette kan ikke angres.",
+      cleared: "Alle data er slettet.",
+      dupNextWeek: "Dupliser til neste uke",
+      moveNextWeek: "Flytt til neste uke",
+      lblCustomColors: "Bygg ditt tema",
+      lblCustomColorsHint: "Velg dine egne farger — samme idé som hurtigtemaer, men du styrer alt.",
+      btnSaveTheme: "💾 Lagre tema",
+      phThemeName: "Temanavn",
+      lblNoSavedThemes: "Ingen lagrede temaer ennå",
+      lblColorPrimary: "App-farger",
+      lblColorGrid: "Kalenderdager",
+      lblColorMark: "Markørfarge",
+      lblMarkHint: "Standardfarge for Marker dag og markørprikker. Du kan fortsatt velge en annen farge per dag ved siden av Marker dag.",
       colAccent: "Aksent",
       colToday: "I dag",
+      colBg: "Sidebakgrunn",
+      colCard: "App-kort",
+      colPanel: "Panel",
       colMark: "Markør",
-      colEvent: "Hendelse / Merke",
-      colBorder: "Dagsgrense",
-      colDayText: "Dagstext",
-      colDayBg: "Dagsbakgrunn",
-      colMuted: "Dempet tekst",
+      colEvent: "Hendelsesmerke",
+      colBorder: "Rutenett",
+      colDayText: "Dagsnumre",
+      colDayBg: "Dagsruter",
+      colMuted: "Sekundær tekst",
       lblFontLibrary: "Skriftbibliotek (40+ Skrifter)",
       lblUiScale: "UI Skala",
       lblZoom: "Zoom",
@@ -1388,7 +1668,11 @@
     document.getElementById('todayBtn').textContent = t('todayBtn');
     
     const weekdaysEl = document.getElementById('weekdaysGrid');
-    const wDays = t('weekdays');
+    let wDays = t('weekdays');
+    if (settings.weekStartMonday) {
+      // Move Sunday to the end: Mon Tue Wed Thu Fri Sat Sun
+      wDays = wDays.slice(1).concat(wDays[0]);
+    }
     weekdaysEl.innerHTML = wDays.map(d => `<div>${d}</div>`).join('');
 
     const toggleBtn = document.getElementById('toggleFormBtn');
@@ -1406,6 +1690,8 @@
     document.getElementById('noteEmoji').placeholder = t('emojiPlaceholder');
     document.getElementById('addNoteBtn').textContent = t('saveEventBtn');
     document.getElementById('customCatName').placeholder = t('catNamePlaceholder');
+    const themeNameEl = document.getElementById('saveThemeName');
+    if (themeNameEl) themeNameEl.placeholder = t('phThemeName');
     document.getElementById('saveCustomCatBtn').textContent = t('saveBtn');
 
     document.querySelector('option[value="#fdcb6e"]').textContent = t('catDefault');
@@ -1473,10 +1759,20 @@
       localStorage.setItem('cal_recurring', JSON.stringify(recurring));
       localStorage.setItem('cal_custom_categories', JSON.stringify(customCategories));
       localStorage.setItem('cal_theme', JSON.stringify(theme));
+      localStorage.setItem('cal_saved_themes', JSON.stringify(savedThemes));
       localStorage.setItem('cal_settings', JSON.stringify(settings));
       localStorage.setItem('cal_monthPhotos', JSON.stringify(monthPhotos));
     } catch (e) {
-      console.warn("Storage quota reached. Compressed photo may be too large.", e);
+      console.warn("Storage quota reached. Photo or data may be too large.", e);
+      // Attempt to free space by clearing the current month photo if present
+      try {
+        const mk = monthKey(current);
+        if (monthPhotos[mk]) {
+          delete monthPhotos[mk];
+          localStorage.setItem('cal_monthPhotos', JSON.stringify(monthPhotos));
+          console.warn('Removed current custom photo to free space.');
+        }
+      } catch (_) {}
     }
   }
 
@@ -1484,6 +1780,7 @@
     const tTheme = {
       accent:'#6c5ce7', today:'#00cec9', mark:'#ff7675', event:'#fdcb6e',
       border:'#2a2a35', dayText:'#e8e8ed', dayBg:'#16161e', muted:'#8b8b9a',
+      bg:'#0f0f13', card:'#16161e', panel:'#12121a',
       font: "Poppins, sans-serif", ...theme
     };
 
@@ -1502,20 +1799,35 @@
     document.documentElement.style.setProperty('--day-text', tTheme.dayText);
     document.documentElement.style.setProperty('--day-bg', tTheme.dayBg);
     document.documentElement.style.setProperty('--muted', tTheme.muted);
+    document.documentElement.style.setProperty('--bg', tTheme.bg);
+    document.documentElement.style.setProperty('--card', tTheme.card);
+    document.documentElement.style.setProperty('--panel', tTheme.panel);
     document.documentElement.style.setProperty('--font', tTheme.font);
+
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) themeMeta.setAttribute('content', tTheme.accent);
 
     const header = document.querySelector('.header');
     if (header) header.style.background = `linear-gradient(135deg, ${tTheme.accent}, color-mix(in srgb, ${tTheme.accent} 65%, #a29bfe))`;
 
-    document.getElementById('cAccent').value = tTheme.accent;
-    document.getElementById('cToday').value = tTheme.today;
-    document.getElementById('cMark').value = tTheme.mark;
-    document.getElementById('cEvent').value = tTheme.event;
-    document.getElementById('cBorder').value = tTheme.border;
-    document.getElementById('cDayText').value = tTheme.dayText;
-    document.getElementById('cDayBg').value = tTheme.dayBg;
-    document.getElementById('cMuted').value = tTheme.muted;
-    document.getElementById('fontSelect').value = tTheme.font;
+    // Sync color pickers
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+    setVal('cAccent', tTheme.accent);
+    setVal('cToday', tTheme.today);
+    setVal('cMark', tTheme.mark);
+    setVal('cEvent', tTheme.event);
+    setVal('cBorder', tTheme.border);
+    setVal('cDayText', tTheme.dayText);
+    setVal('cDayBg', tTheme.dayBg);
+    setVal('cMuted', tTheme.muted);
+    setVal('cBg', tTheme.bg);
+    setVal('cCard', tTheme.card);
+    setVal('cPanel', tTheme.panel);
+    setVal('fontSelect', tTheme.font);
+
+    // Keep the day-panel mark color picker in sync with the theme default
+    const markPicker = document.getElementById('markColorPicker');
+    if (markPicker) markPicker.value = tTheme.mark;
   }
 
   function applyScale(){
@@ -1585,6 +1897,244 @@
     });
   }
 
+  function getDayDiff(d1, d2) {
+    // Pure calendar-day difference using UTC to avoid DST / timezone shifts
+    const a = Date.UTC(d1.getFullYear(), d1.getMonth(), d1.getDate());
+    const b = Date.UTC(d2.getFullYear(), d2.getMonth(), d2.getDate());
+    return Math.round((b - a) / 86400000);
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     NOTIFICATIONS – system popup + in-app toast
+     ═══════════════════════════════════════════════════════════ */
+  let lastNotifyCheckMin = -1;
+  const NOTIFY_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%236c5ce7'/%3E%3Ctext y='.9em' font-size='70' x='50%25' text-anchor='middle' fill='white'%3E📅%3C/text%3E%3C/svg%3E";
+
+  // Nice in-app toast that matches the app style
+  function showInAppToast(title, body, accentColor) {
+    const old = document.getElementById('calToast');
+    if (old) old.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'calToast';
+    toast.innerHTML = `
+      <div class="cal-toast-accent" style="background:${accentColor || 'var(--accent)'}"></div>
+      <div class="cal-toast-content">
+        <div class="cal-toast-title">${title}</div>
+        <div class="cal-toast-body">${body}</div>
+      </div>
+      <button class="cal-toast-close" aria-label="Dismiss">×</button>
+    `;
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+
+    const dismiss = () => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 300);
+    };
+    toast.querySelector('.cal-toast-close').onclick = dismiss;
+    const stayMs = Math.max(3, Math.min(300, settings.toastDuration || 8)) * 1000;
+    setTimeout(dismiss, stayMs);
+  }
+
+  function stopAlarmSound() {
+    if (alarmStopTimer) { clearTimeout(alarmStopTimer); alarmStopTimer = null; }
+    if (alarmAudio) {
+      try { alarmAudio.pause(); alarmAudio.currentTime = 0; } catch (_) {}
+    }
+  }
+
+  function playAlarmSound() {
+    if (!settings.soundEnabled) return;
+    stopAlarmSound();
+    try {
+      alarmAudio = new Audio('https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg');
+      alarmAudio.loop = true;
+      alarmAudio.volume = 0.85;
+      const playPromise = alarmAudio.play();
+      if (playPromise && playPromise.catch) {
+        playPromise.catch(err => console.warn('[Calendar] Alarm play blocked:', err.message));
+      }
+      // Each "play" length × how many times to repeat (max ~5 min total)
+      const oneShot = Math.max(1, Math.min(60, settings.soundDuration || 5));
+      const times = Math.max(1, Math.min(5, settings.soundRepeat || 1));
+      const totalSecs = Math.min(300, oneShot * times); // hard cap 5 minutes
+      alarmStopTimer = setTimeout(stopAlarmSound, totalSecs * 1000);
+    } catch (err) {
+      console.warn('[Calendar] Alarm sound error:', err);
+    }
+  }
+
+  async function showAppNotification(title, body, options = {}) {
+    // 1. Styled in-app toast
+    showInAppToast(title, body, options.accentColor);
+
+    // 2. Alarm sound (respects mute + duration settings)
+    if (options.playSound !== false) {
+      playAlarmSound();
+    }
+
+    // 3. System notification (SW preferred)
+    if (!('Notification' in window) || Notification.permission !== 'granted') return false;
+
+    try {
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        if (reg && reg.showNotification) {
+          await reg.showNotification(title, {
+            body: body,
+            icon: NOTIFY_ICON,
+            badge: NOTIFY_ICON,
+            tag: options.tag || 'cal-event',
+            vibrate: [120, 60, 120],
+            requireInteraction: false,
+            data: options.data || {}
+          });
+          return true;
+        }
+      }
+    } catch (e) {
+      console.warn('SW notification failed', e);
+    }
+
+    try {
+      new Notification(title, {
+        body: body,
+        icon: NOTIFY_ICON,
+        tag: options.tag || 'cal-event',
+        silent: false
+      });
+      return true;
+    } catch (err) {
+      console.warn('Notification failed', err);
+      return false;
+    }
+  }
+
+  function checkUpcomingNotifications(force) {
+    if (!settings.notifyEnabled) return;
+    const now = new Date();
+    const currentMin = now.getHours() * 60 + now.getMinutes();
+
+    // Only skip if we already checked this exact minute (unless forced)
+    if (!force && currentMin === lastNotifyCheckMin) return;
+    lastNotifyCheckMin = currentMin;
+
+    let notifiedMap = {};
+    try { notifiedMap = JSON.parse(localStorage.getItem('cal_notified') || '{}'); } catch(e) {}
+    const daysAhead = Math.max(0, Math.min(7, settings.notifyDaysAhead ?? 1));
+    const cutoff = Date.now() - 7 * 86400000;
+    let mapChanged = false;
+
+    // ── TODAY: timed events – fire from 10 min before until 5 min after ──
+    const todayStr = key(now);
+    const todayNotes = getNotesForDate(now);
+
+    todayNotes.forEach(n => {
+      if (n.completed || !n.time) return;
+
+      const parts = String(n.time).split(':');
+      const eventMin = parseInt(parts[0], 10) * 60 + parseInt(parts[1] || '0', 10);
+      if (isNaN(eventMin)) return;
+
+      const diff = currentMin - eventMin; // 0 = exact time, negative = still in the future
+
+      // Only when the time is reached (1 min before → 5 min after).
+      // Creating an event for later must NOT trigger "it's time" immediately.
+      if (diff < -1 || diff > 5) return;
+
+      const nid = todayStr + '-' + n.id;
+      if (notifiedMap[nid] && notifiedMap[nid] > cutoff) return;
+
+      const title = (n.emoji ? n.emoji + ' ' : '') + (n.text || 'Event');
+      const body = `It's ${formatDisplayTime(n.time)} — time for your event`;
+
+      console.log('[Calendar] Firing TIME notification for:', title, body);
+      showAppNotification(title, body, {
+        tag: nid,
+        accentColor: n.categoryColor || 'var(--accent)',
+        data: { date: todayStr, id: n.id }
+      });
+
+      notifiedMap[nid] = Date.now();
+      mapChanged = true;
+    });
+
+    // ── Days-ahead + all-day today ──
+    for (let i = 0; i <= daysAhead; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+      d.setHours(0, 0, 0, 0);
+      const dateStr = key(d);
+      const dayNotes = getNotesForDate(d);
+
+      dayNotes.forEach(n => {
+        if (n.completed) return;
+        // Timed events on today already handled above
+        if (i === 0 && n.time) return;
+
+        const nid = dateStr + '-' + n.id + (i === 0 ? '-allday' : '-ahead');
+        if (notifiedMap[nid] && notifiedMap[nid] > cutoff) return;
+
+        const title = (n.emoji ? n.emoji + ' ' : '') + (n.text || 'Event');
+        let body;
+        if (i === 0) {
+          body = 'You have an event today';
+        } else {
+          const when = getLocalizedDateString(d, { weekday: 'short', month: 'short', day: 'numeric' });
+          body = n.time
+            ? `In ${i} day${i > 1 ? 's' : ''} (${when}) at ${formatDisplayTime(n.time)}`
+            : `In ${i} day${i > 1 ? 's' : ''} • ${when}`;
+        }
+
+        console.log('[Calendar] Firing ahead notification for:', title, body);
+        showAppNotification(title, body, {
+          tag: nid,
+          accentColor: n.categoryColor || 'var(--accent)',
+          data: { date: dateStr, id: n.id }
+        });
+
+        notifiedMap[nid] = Date.now();
+        mapChanged = true;
+      });
+
+      if (i > 0 && marks[dateStr]) {
+        const nid = dateStr + '-mark';
+        if (!(notifiedMap[nid] && notifiedMap[nid] > cutoff)) {
+          const when = getLocalizedDateString(d, { weekday: 'short', month: 'short', day: 'numeric' });
+          showAppNotification('📌 Marked day', `In ${i} day${i > 1 ? 's' : ''} • ${when}`, {
+            tag: nid,
+            accentColor: 'var(--mark)'
+          });
+          notifiedMap[nid] = Date.now();
+          mapChanged = true;
+        }
+      }
+    }
+
+    if (mapChanged) {
+      Object.keys(notifiedMap).forEach(k => {
+        if (notifiedMap[k] < cutoff) delete notifiedMap[k];
+      });
+      try { localStorage.setItem('cal_notified', JSON.stringify(notifiedMap)); } catch(_) {}
+    }
+  }
+
+  function parseStartDate(r, fallback) {
+    // Support both legacy ISO strings and YYYY-MM-DD keys to keep weekday stable
+    let startDate;
+    if (r.startDate && typeof r.startDate === 'string' && r.startDate.includes('T')) {
+      startDate = new Date(r.startDate);
+    } else if (r.startDate) {
+      startDate = new Date(r.startDate + 'T12:00:00');
+    } else if (r.date) {
+      startDate = new Date(r.date + (String(r.date).includes('T') ? '' : 'T12:00:00'));
+    } else {
+      startDate = new Date(fallback);
+    }
+    startDate.setHours(0, 0, 0, 0);
+    return startDate;
+  }
+
   function getNotesForDate(date){
     const k = key(date);
     const list = notes[k] ? [...notes[k]] : [];
@@ -1595,23 +2145,22 @@
       let isMatch = false;
 
       if (r.repeat === 'daily') {
-        const startDate = new Date(r.startDate || r.date || targetTime);
-        startDate.setHours(0, 0, 0, 0);
+        const startDate = parseStartDate(r, targetTime);
         if (targetTime >= startDate) {
           isMatch = true;
         }
       } else if (r.repeat === 'weekly' || r.repeat === 'fortnightly') {
-        const startDate = new Date(r.startDate || r.date || targetTime);
-        startDate.setHours(0, 0, 0, 0);
+        const startDate = parseStartDate(r, targetTime);
         if (targetTime >= startDate) {
-          const diffTime = targetTime - startDate;
-          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+          const diffDays = getDayDiff(startDate, targetTime);
           const intervalDays = r.repeat === 'fortnightly' ? 14 : 7;
-          if (diffDays % intervalDays === 0) {
+          // Also require matching weekday so leap years / year boundaries cannot drift the day
+          if (diffDays % intervalDays === 0 && targetTime.getDay() === startDate.getDay()) {
             isMatch = true;
           }
         }
       } else {
+        // yearly
         if (r.month === date.getMonth()+1 && r.day === date.getDate()) {
           isMatch = true;
         }
@@ -1687,6 +2236,10 @@
         document.getElementById('fullDate').textContent = getLocalizedDateString(now, {
           weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
         });
+        // Check notifications several times per minute so short time windows are not missed
+        if (seconds === 0 || seconds === 15 || seconds === 30 || seconds === 45) {
+          checkUpcomingNotifications();
+        }
       }
       requestAnimationFrame(tick);
     }
@@ -1697,7 +2250,10 @@
     const year = current.getFullYear(), month = current.getMonth();
     document.getElementById('monthYear').textContent = getLocalizedDateString(current, { month: 'long', year: 'numeric' });
 
-    const firstDay = new Date(year, month, 1).getDay();
+    let firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+    if (settings.weekStartMonday) {
+      firstDay = (firstDay + 6) % 7; // 0=Mon ... 6=Sun
+    }
     const daysInMonth = new Date(year, month+1, 0).getDate();
     const daysInPrev = new Date(year, month, 0).getDate();
 
@@ -1777,6 +2333,7 @@
       else if (n.repeat === 'fortnightly') repeatLabel = `<div class="event-recurring">${t('repeatsFortnightly')}</div>`;
       else if (n.repeat === 'yearly' || n.recurring) repeatLabel = `<div class="event-recurring">${t('repeatsYearly')}</div>`;
 
+      const isRecurring = !!n.recurring || !!n.repeat;
       li.innerHTML = `
         <input type="checkbox" ${n.completed ? 'checked' : ''} data-id="${n.id}" title="Toggle Completed">
         <div class="event-text">
@@ -1785,7 +2342,11 @@
           <span style="border-left: 3px solid ${n.categoryColor || 'var(--event)'}; padding-left: 6px;">${formattedText}</span>
           ${repeatLabel}
         </div>
-        <button class="delete-event" data-id="${n.id}">×</button>`;
+        <div class="event-actions" style="display:flex;gap:2px;align-items:center;">
+          <button class="edit-event" data-id="${n.id}" title="${t('editEvent')}" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:14px;padding:0 3px;">✏️</button>
+          ${!isRecurring ? `<button class="dup-event" data-id="${n.id}" title="${t('dupNextWeek')}" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 3px;">📅+</button>` : ''}
+          <button class="delete-event" data-id="${n.id}">×</button>
+        </div>`;
       list.appendChild(li);
     });
 
@@ -1802,6 +2363,20 @@
       });
     });
 
+    list.querySelectorAll('.edit-event').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        startEditEvent(btn.dataset.id);
+      });
+    });
+
+    list.querySelectorAll('.dup-event').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        duplicateToNextWeek(btn.dataset.id);
+      });
+    });
+
     list.querySelectorAll('.delete-event').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.dataset.id;
@@ -1810,10 +2385,77 @@
           if (!notes[k].length) delete notes[k];
         }
         recurring = recurring.filter(r => r.id !== id);
+        if (editingId === id) {
+          editingId = null;
+          resetNoteForm();
+        }
         save();
         render();
       });
     });
+  }
+
+  function resetNoteForm() {
+    document.getElementById('noteText').value = '';
+    document.getElementById('noteTime').value = '';
+    document.getElementById('noteEmoji').value = '';
+    document.getElementById('noteRepeat').value = 'none';
+    document.getElementById('eventCategory').value = '#fdcb6e';
+    activeStyles = { bold: false, italic: false, strike: false };
+    document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+    editingId = null;
+    document.getElementById('addNoteBtn').textContent = t('saveEventBtn');
+    noteForm.classList.remove('open');
+    toggleFormBtn.classList.remove('active');
+    toggleFormBtn.textContent = t('addEventBtn');
+  }
+
+  function startEditEvent(id) {
+    const k = key(selected);
+    const note = (notes[k] || []).find(n => n.id === id) || recurring.find(r => r.id === id);
+    if (!note) return;
+
+    editingId = id;
+    document.getElementById('noteText').value = note.text || '';
+    document.getElementById('noteTime').value = note.time || '';
+    document.getElementById('noteEmoji').value = note.emoji || '';
+    document.getElementById('noteRepeat').value = note.repeat || 'none';
+    document.getElementById('eventCategory').value = note.categoryColor || '#fdcb6e';
+
+    activeStyles = { bold: !!note.styles?.bold, italic: !!note.styles?.italic, strike: !!note.styles?.strike };
+    document.getElementById('btnBold').classList.toggle('active', activeStyles.bold);
+    document.getElementById('btnItalic').classList.toggle('active', activeStyles.italic);
+    document.getElementById('btnStrike').classList.toggle('active', activeStyles.strike);
+
+    noteForm.classList.add('open');
+    toggleFormBtn.classList.add('active');
+    toggleFormBtn.textContent = t('closeFormBtn');
+    document.getElementById('addNoteBtn').textContent = t('updateEventBtn');
+  }
+
+  function duplicateToNextWeek(id) {
+    const k = key(selected);
+    const note = (notes[k] || []).find(n => n.id === id);
+    if (!note) return; // only non-recurring
+
+    const next = new Date(selected);
+    next.setDate(next.getDate() + 7);
+    const nk = key(next);
+    if (!notes[nk]) notes[nk] = [];
+    notes[nk].push({
+      id: uid(),
+      text: note.text,
+      time: note.time,
+      emoji: note.emoji,
+      categoryColor: note.categoryColor,
+      styles: note.styles ? { ...note.styles } : {},
+      completed: false
+    });
+    save();
+    // Jump to the new date so user sees it
+    selected = next;
+    current = new Date(next.getFullYear(), next.getMonth(), 1);
+    render();
   }
 
   function executeSearch(){
@@ -1826,17 +2468,32 @@
 
     Object.keys(notes).forEach(dateStr => {
       notes[dateStr].forEach(n => {
-        if (dateStr.includes(query) || n.text.toLowerCase().includes(query) || (n.emoji && n.emoji.includes(query))) {
+        const catName = (customCategories.find(c => c.color === n.categoryColor) || {}).name || '';
+        if (dateStr.includes(query) || n.text.toLowerCase().includes(query) ||
+            (n.emoji && n.emoji.includes(query)) ||
+            (catName && catName.toLowerCase().includes(query))) {
           matches.push({ date: new Date(dateStr + 'T00:00:00'), text: n.text, emoji: n.emoji || '' });
         }
       });
     });
 
+    // Marked days
+    Object.keys(marks).forEach(dateStr => {
+      if (dateStr.includes(query) || query === 'mark' || query === 'marked') {
+        matches.push({ date: new Date(dateStr + 'T00:00:00'), text: '📌 Marked day', emoji: '📌' });
+      }
+    });
+
     recurring.forEach(r => {
-      if (r.text.toLowerCase().includes(query) || (r.emoji && r.emoji.includes(query))) {
+      const catName = (customCategories.find(c => c.color === r.categoryColor) || {}).name || '';
+      if (r.text.toLowerCase().includes(query) || (r.emoji && r.emoji.includes(query)) ||
+          (catName && catName.toLowerCase().includes(query))) {
         let matchDate = new Date(current.getFullYear(), (r.month || 1) - 1, r.day || 1);
         if (r.startDate) {
-          matchDate = new Date(r.startDate);
+          // Safe parse: YYYY-MM-DD or legacy ISO, avoid UTC day-shift
+          matchDate = (typeof r.startDate === 'string' && !r.startDate.includes('T'))
+            ? new Date(r.startDate + 'T12:00:00')
+            : new Date(r.startDate);
         }
         matches.push({ date: matchDate, text: r.text + ` (${r.repeat || 'recurring'})`, emoji: r.emoji || '' });
       }
@@ -1884,9 +2541,21 @@
   const noteForm = document.getElementById('noteForm');
 
   toggleFormBtn.addEventListener('click', () => {
+    const willOpen = !noteForm.classList.contains('open');
     noteForm.classList.toggle('open');
-    toggleFormBtn.classList.toggle('active', noteForm.classList.contains('open'));
-    toggleFormBtn.textContent = noteForm.classList.contains('open') ? t('closeFormBtn') : t('addEventBtn');
+    toggleFormBtn.classList.toggle('active', willOpen);
+    toggleFormBtn.textContent = willOpen ? t('closeFormBtn') : t('addEventBtn');
+    if (!willOpen && editingId) {
+      // Closing while editing → cancel edit
+      editingId = null;
+      document.getElementById('addNoteBtn').textContent = t('saveEventBtn');
+      document.getElementById('noteText').value = '';
+      document.getElementById('noteTime').value = '';
+      document.getElementById('noteEmoji').value = '';
+      document.getElementById('noteRepeat').value = 'none';
+      activeStyles = { bold: false, italic: false, strike: false };
+      document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+    }
   });
 
   /* TEXT FORMATTING TOGGLES */
@@ -2005,37 +2674,85 @@
     if (categoryColor === '__NEW__') categoryColor = '#fdcb6e';
 
     const repeatVal = document.getElementById('noteRepeat').value;
-    const id = uid();
     const styles = { ...activeStyles };
 
-    if (repeatVal !== 'none') {
-      const startDate = new Date(selected);
-      startDate.setHours(0, 0, 0, 0);
-      recurring.push({
-        id, text, time, emoji, categoryColor, styles, completed: false,
-        repeat: repeatVal,
-        startDate: startDate.toISOString(),
-        month: selected.getMonth()+1,
-        day: selected.getDate()
-      });
-    } else {
+    if (editingId) {
+      // UPDATE existing
       const k = key(selected);
-      if (!notes[k]) notes[k] = [];
-      notes[k].push({ id, text, time, emoji, categoryColor, styles, completed: false });
+      let note = (notes[k] || []).find(n => n.id === editingId);
+      let isRec = false;
+      if (!note) {
+        note = recurring.find(r => r.id === editingId);
+        isRec = true;
+      }
+      if (note) {
+        note.text = text;
+        note.time = time;
+        note.emoji = emoji;
+        note.categoryColor = categoryColor;
+        note.styles = styles;
+        if (isRec) {
+          note.repeat = repeatVal;
+          if (repeatVal === 'none') {
+            // Convert recurring → one-off on selected day
+            recurring = recurring.filter(r => r.id !== editingId);
+            if (!notes[k]) notes[k] = [];
+            notes[k].push({ id: editingId, text, time, emoji, categoryColor, styles, completed: note.completed || false });
+          }
+        } else if (repeatVal !== 'none') {
+          // Convert one-off → recurring
+          notes[k] = (notes[k] || []).filter(n => n.id !== editingId);
+          if (!notes[k] || !notes[k].length) delete notes[k];
+          recurring.push({
+            id: editingId, text, time, emoji, categoryColor, styles, completed: note.completed || false,
+            repeat: repeatVal,
+            startDate: key(selected),
+            month: selected.getMonth()+1,
+            day: selected.getDate()
+          });
+        }
+      }
+      editingId = null;
+    } else {
+      // CREATE new
+      const id = uid();
+      if (repeatVal !== 'none') {
+        recurring.push({
+          id, text, time, emoji, categoryColor, styles, completed: false,
+          repeat: repeatVal,
+          startDate: key(selected),
+          month: selected.getMonth()+1,
+          day: selected.getDate()
+        });
+      } else {
+        const k = key(selected);
+        if (!notes[k]) notes[k] = [];
+        notes[k].push({ id, text, time, emoji, categoryColor, styles, completed: false });
+      }
     }
 
-    document.getElementById('noteText').value = '';
-    document.getElementById('noteTime').value = '';
-    document.getElementById('noteEmoji').value = '';
-    document.getElementById('noteRepeat').value = 'none';
+    // Clear old "already notified" flag for this day so the new event can still fire later when time is reached
+    try {
+      const map = JSON.parse(localStorage.getItem('cal_notified') || '{}');
+      const prefix = key(selected) + '-';
+      Object.keys(map).forEach(k => {
+        if (k.startsWith(prefix) && !k.endsWith('-ahead') && !k.endsWith('-allday') && !k.endsWith('-mark')) {
+          delete map[k];
+        }
+      });
+      localStorage.setItem('cal_notified', JSON.stringify(map));
+    } catch (_) {}
 
-    activeStyles = { bold: false, italic: false, strike: false };
-    document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+    // Friendly confirmation toast (NOT the "it's time" reminder)
+    const whenLabel = getLocalizedDateString(selected, { weekday: 'short', month: 'short', day: 'numeric' });
+    const timeLabel = time ? formatDisplayTime(time) : '';
+    const saveTitle = (emoji ? emoji + ' ' : '') + (text.length > 40 ? text.slice(0, 40) + '…' : text);
+    const saveBody = timeLabel
+      ? `Saved · ${whenLabel} at ${timeLabel}`
+      : `Saved · ${whenLabel}`;
+    showInAppToast(saveTitle, saveBody, categoryColor || 'var(--accent)');
 
-    noteForm.classList.remove('open');
-    toggleFormBtn.classList.remove('active');
-    toggleFormBtn.textContent = t('addEventBtn');
-
+    resetNoteForm();
     save();
     render();
   });
@@ -2060,9 +2777,141 @@
     render();
   });
 
+  const notifyToggle = document.getElementById('notifyToggle');
+  const notifyOptionsGroup = document.getElementById('notifyOptionsGroup');
+  const notifyDaysSlider = document.getElementById('notifyDaysSlider');
+  const notifyDaysVal = document.getElementById('notifyDaysVal');
+  const toastDurationSlider = document.getElementById('toastDurationSlider');
+  const toastDurationVal = document.getElementById('toastDurationVal');
+  const soundToggle = document.getElementById('soundToggle');
+  const soundDurationGroup = document.getElementById('soundDurationGroup');
+  const soundDurationSlider = document.getElementById('soundDurationSlider');
+  const soundDurationVal = document.getElementById('soundDurationVal');
+  const soundRepeatGroup = document.getElementById('soundRepeatGroup');
+  const soundRepeatSlider = document.getElementById('soundRepeatSlider');
+  const soundRepeatVal = document.getElementById('soundRepeatVal');
+
+  notifyToggle.checked = !!settings.notifyEnabled;
+  notifyOptionsGroup.style.display = settings.notifyEnabled ? 'block' : 'none';
+  notifyDaysSlider.value = settings.notifyDaysAhead ?? 1;
+  notifyDaysVal.textContent = settings.notifyDaysAhead ?? 1;
+  toastDurationSlider.value = settings.toastDuration ?? 8;
+  toastDurationVal.textContent = settings.toastDuration ?? 8;
+  soundToggle.checked = settings.soundEnabled !== false;
+  soundDurationGroup.style.display = settings.soundEnabled !== false ? 'block' : 'none';
+  soundRepeatGroup.style.display = settings.soundEnabled !== false ? 'block' : 'none';
+  soundDurationSlider.value = settings.soundDuration ?? 5;
+  soundDurationVal.textContent = settings.soundDuration ?? 5;
+  soundRepeatSlider.value = settings.soundRepeat ?? 1;
+  soundRepeatVal.textContent = settings.soundRepeat ?? 1;
+
+  notifyToggle.addEventListener('change', async e => {
+    if (e.target.checked) {
+      if (!('Notification' in window)) {
+        alert('Notifications are not supported in this browser.');
+        e.target.checked = false;
+        return;
+      }
+      let perm = Notification.permission;
+      if (perm === 'default') {
+        perm = await Notification.requestPermission();
+      }
+      if (perm !== 'granted') {
+        alert('Notification permission denied.\n\nPlease allow notifications for this site in your browser settings, then try again.');
+        e.target.checked = false;
+        settings.notifyEnabled = false;
+        notifyOptionsGroup.style.display = 'none';
+        save();
+        return;
+      }
+    }
+    settings.notifyEnabled = e.target.checked;
+    notifyOptionsGroup.style.display = settings.notifyEnabled ? 'block' : 'none';
+    save();
+    if (settings.notifyEnabled) {
+      setTimeout(() => checkUpcomingNotifications(true), 300);
+    }
+  });
+  notifyDaysSlider.addEventListener('input', e => {
+    settings.notifyDaysAhead = +e.target.value;
+    notifyDaysVal.textContent = settings.notifyDaysAhead;
+    save();
+  });
+  toastDurationSlider.addEventListener('input', e => {
+    settings.toastDuration = +e.target.value;
+    toastDurationVal.textContent = settings.toastDuration;
+    save();
+  });
+  soundToggle.addEventListener('change', e => {
+    settings.soundEnabled = e.target.checked;
+    soundDurationGroup.style.display = settings.soundEnabled ? 'block' : 'none';
+    soundRepeatGroup.style.display = settings.soundEnabled ? 'block' : 'none';
+    if (!settings.soundEnabled) stopAlarmSound();
+    save();
+  });
+  soundDurationSlider.addEventListener('input', e => {
+    settings.soundDuration = +e.target.value;
+    soundDurationVal.textContent = settings.soundDuration;
+    save();
+  });
+  soundRepeatSlider.addEventListener('input', e => {
+    settings.soundRepeat = +e.target.value;
+    soundRepeatVal.textContent = settings.soundRepeat;
+    save();
+  });
+
+  document.getElementById('stopAlarmBtn').addEventListener('click', () => {
+    stopAlarmSound();
+  });
+
+  document.getElementById('printMonthBtn').addEventListener('click', () => {
+    // Close settings so print layout is clean, then print
+    document.getElementById('settingsPanel').classList.remove('open');
+    setTimeout(() => window.print(), 150);
+  });
+
+  const weekStartToggle = document.getElementById('weekStartToggle');
+  weekStartToggle.checked = !!settings.weekStartMonday;
+  weekStartToggle.addEventListener('change', e => {
+    settings.weekStartMonday = e.target.checked;
+    save();
+    applyLanguageStrings(); // refresh weekday headers
+    render();
+  });
+
+  document.getElementById('clearAllBtn').addEventListener('click', () => {
+    // Step 1: offer to download a backup first
+    const wantBackup = confirm(t('confirmClearBackup'));
+    if (wantBackup) {
+      const data = { marks, notes, recurring, customCategories, theme, savedThemes, settings, monthPhotos };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `calendar_backup_${key(new Date())}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      // Still confirm before wiping
+      if (!confirm(t('confirmClear'))) return;
+    } else {
+      // Skipped backup — stronger warning
+      if (!confirm(t('confirmClearFinal'))) return;
+    }
+    marks = {};
+    notes = {};
+    recurring = [];
+    customCategories = [];
+    monthPhotos = {};
+    localStorage.removeItem('cal_notified');
+    save();
+    renderCustomCategoriesUI();
+    render();
+    alert(t('cleared'));
+  });
+
   /* DATA BACKUP & RESTORE & ICAL EXPORT */
   document.getElementById('exportJsonBtn').addEventListener('click', () => {
-    const data = { marks, notes, recurring, customCategories, theme, settings, monthPhotos };
+    const data = { marks, notes, recurring, customCategories, theme, savedThemes, settings, monthPhotos };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -2083,37 +2932,106 @@
     reader.onload = () => {
       try {
         const imported = JSON.parse(reader.result);
-        if (imported.marks) marks = imported.marks;
-        if (imported.notes) notes = imported.notes;
-        if (imported.recurring) recurring = imported.recurring;
-        if (imported.customCategories) customCategories = imported.customCategories;
-        if (imported.theme) theme = imported.theme;
-        if (imported.settings) settings = imported.settings;
-        if (imported.monthPhotos) monthPhotos = imported.monthPhotos;
+        // Require at least one known key so random JSON isn't accepted
+        if (!imported || typeof imported !== 'object' ||
+            !(imported.marks || imported.notes || imported.recurring || imported.theme || imported.settings)) {
+          alert('Invalid JSON backup file.');
+          e.target.value = '';
+          return;
+        }
+        // Full restore: replace each section that exists in the backup
+        if (imported.marks !== undefined) marks = imported.marks && typeof imported.marks === 'object' ? imported.marks : {};
+        if (imported.notes !== undefined) notes = imported.notes && typeof imported.notes === 'object' ? imported.notes : {};
+        if (imported.recurring !== undefined) recurring = Array.isArray(imported.recurring) ? imported.recurring : [];
+        if (imported.customCategories !== undefined) customCategories = Array.isArray(imported.customCategories) ? imported.customCategories : [];
+        if (imported.theme !== undefined && typeof imported.theme === 'object') theme = imported.theme || {};
+        if (imported.savedThemes !== undefined) savedThemes = Array.isArray(imported.savedThemes) ? imported.savedThemes : [];
+        if (imported.settings !== undefined && typeof imported.settings === 'object') {
+          settings = { ...settings, ...imported.settings };
+        }
+        if (imported.monthPhotos !== undefined) monthPhotos = imported.monthPhotos && typeof imported.monthPhotos === 'object' ? imported.monthPhotos : {};
+        // Reset notification throttle map so restored timed events can fire
+        try { localStorage.removeItem('cal_notified'); } catch (_) {}
+
         save();
         applyTheme();
         applyScale();
         applyLanguageStrings();
+
+        // Re-sync all settings UI controls from restored settings
+        document.getElementById('timeFormatToggle').checked = !!settings.use24Hour;
+        document.getElementById('autoMarkPastToggle').checked = !!settings.autoMarkPast;
+        document.getElementById('notifyToggle').checked = !!settings.notifyEnabled;
+        document.getElementById('notifyOptionsGroup').style.display = settings.notifyEnabled ? 'block' : 'none';
+        document.getElementById('notifyDaysSlider').value = settings.notifyDaysAhead ?? 1;
+        document.getElementById('notifyDaysVal').textContent = settings.notifyDaysAhead ?? 1;
+        document.getElementById('toastDurationSlider').value = settings.toastDuration ?? 8;
+        document.getElementById('toastDurationVal').textContent = settings.toastDuration ?? 8;
+        document.getElementById('soundToggle').checked = settings.soundEnabled !== false;
+        document.getElementById('soundDurationGroup').style.display = settings.soundEnabled !== false ? 'block' : 'none';
+        document.getElementById('soundRepeatGroup').style.display = settings.soundEnabled !== false ? 'block' : 'none';
+        document.getElementById('soundDurationSlider').value = settings.soundDuration ?? 5;
+        document.getElementById('soundDurationVal').textContent = settings.soundDuration ?? 5;
+        document.getElementById('soundRepeatSlider').value = settings.soundRepeat ?? 1;
+        document.getElementById('soundRepeatVal').textContent = settings.soundRepeat ?? 1;
+        document.getElementById('weekStartToggle').checked = !!settings.weekStartMonday;
+        document.getElementById('languageSelect').value = settings.language || 'en';
+
+        updatePhotoUI();
+        renderCustomCategoriesUI();
+        renderSavedThemes();
         render();
         alert('Data imported successfully!');
       } catch (err) {
         alert('Invalid JSON backup file.');
       }
+      e.target.value = ''; // allow re-importing the same file
     };
     reader.readAsText(file);
   });
 
   document.getElementById('exportIcsBtn').addEventListener('click', () => {
-    let icsContent = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Desktop Calendar V12.1//EN\r\n";
+    const icsEscape = (s) => String(s || '')
+      .replace(/\\/g, '\\\\')
+      .replace(/;/g, '\\;')
+      .replace(/,/g, '\\,')
+      .replace(/\n/g, ' ');
+    let icsContent = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Simple Calendar//EN\r\nCALSCALE:GREGORIAN\r\n";
     
     Object.keys(notes).forEach(dateStr => {
-      notes[dateStr].forEach(n => {
+      (notes[dateStr] || []).forEach(n => {
         let cleanDate = dateStr.replace(/-/g, '');
         icsContent += "BEGIN:VEVENT\r\n";
-        icsContent += `SUMMARY:${n.emoji ? n.emoji + ' ' : ''}${n.text}\r\n`;
-        icsContent += `DTSTART;VALUE=DATE:${cleanDate}\r\n`;
+        icsContent += `UID:${n.id || uid()}@simplecalendar\r\n`;
+        icsContent += `SUMMARY:${icsEscape((n.emoji ? n.emoji + ' ' : '') + (n.text || ''))}\r\n`;
+        if (n.time) {
+          const t = n.time.replace(':', '') + '00';
+          icsContent += `DTSTART:${cleanDate}T${t}\r\n`;
+        } else {
+          icsContent += `DTSTART;VALUE=DATE:${cleanDate}\r\n`;
+        }
         icsContent += "END:VEVENT\r\n";
       });
+    });
+
+    // Export recurring as yearly or with basic RRULE (best-effort)
+    recurring.forEach(r => {
+      const start = parseStartDate(r, new Date());
+      const cleanDate = key(start).replace(/-/g, '');
+      icsContent += "BEGIN:VEVENT\r\n";
+      icsContent += `UID:${r.id || uid()}@simplecalendar\r\n`;
+      icsContent += `SUMMARY:${icsEscape((r.emoji ? r.emoji + ' ' : '') + (r.text || '') + ' (recurring)')}\r\n`;
+      if (r.time) {
+        const t = r.time.replace(':', '') + '00';
+        icsContent += `DTSTART:${cleanDate}T${t}\r\n`;
+      } else {
+        icsContent += `DTSTART;VALUE=DATE:${cleanDate}\r\n`;
+      }
+      if (r.repeat === 'daily') icsContent += "RRULE:FREQ=DAILY\r\n";
+      else if (r.repeat === 'weekly') icsContent += "RRULE:FREQ=WEEKLY\r\n";
+      else if (r.repeat === 'fortnightly') icsContent += "RRULE:FREQ=WEEKLY;INTERVAL=2\r\n";
+      else if (r.repeat === 'yearly') icsContent += "RRULE:FREQ=YEARLY\r\n";
+      icsContent += "END:VEVENT\r\n";
     });
 
     icsContent += "END:VCALENDAR";
@@ -2129,18 +3047,18 @@
 
   const themeRow = document.getElementById('themeRow');
   const presets = [
-    {name:'Purple',accent:'#6c5ce7',today:'#00cec9',mark:'#ff7675',event:'#fdcb6e',border:'#2a2a35',dayText:'#e8e8ed',dayBg:'#16161e',muted:'#8b8b9a'},
-    {name:'Ocean',accent:'#0984e3',today:'#00b894',mark:'#e17055',event:'#fdcb6e',border:'#1e3a5f',dayText:'#e8e8ed',dayBg:'#0f1c2e',muted:'#7a9bb8'},
-    {name:'Forest',accent:'#00b894',today:'#55efc4',mark:'#d63031',event:'#ffeaa7',border:'#1a3c34',dayText:'#e8e8ed',dayBg:'#0f2a24',muted:'#7aa89a'},
-    {name:'Sunset',accent:'#e17055',today:'#fdcb6e',mark:'#d63031',event:'#a29bfe',border:'#3d2a22',dayText:'#e8e8ed',dayBg:'#2a1a14',muted:'#b89a8a'},
-    {name:'Night',accent:'#636e72',today:'#74b9ff',mark:'#ff7675',event:'#a29bfe',border:'#2d3436',dayText:'#dfe6e9',dayBg:'#1e272e',muted:'#636e72'},
-    {name:'Rose',accent:'#e84393',today:'#fd79a8',mark:'#d63031',event:'#ffeaa7',border:'#3d1f2e',dayText:'#e8e8ed',dayBg:'#2a1520',muted:'#b87a9a'},
-    {name:'Neon Cyber',accent:'#00ffcc',today:'#ff007f',mark:'#ff0055',event:'#ffe600',border:'#1f1f3a',dayText:'#ffffff',dayBg:'#0b0c10',muted:'#66fcf1'},
-    {name:'Pastel Lavender',accent:'#b8c0ff',today:'#c8b6ff',mark:'#ffc6ff',event:'#ffd6a5',border:'#3c3b52',dayText:'#f1f1f1',dayBg:'#22223b',muted:'#9a8c98'},
-    {name:'Gold Luxury',accent:'#d4af37',today:'#f3e5ab',mark:'#e63946',event:'#f4a261',border:'#332d18',dayText:'#fefae0',dayBg:'#1a1810',muted:'#b5a366'},
-    {name:'Emerald',accent:'#2ec4b6',today:'#cbf3f0',mark:'#e71d36',event:'#ff9f1c',border:'#173d38',dayText:'#ffffff',dayBg:'#091e1c',muted:'#70a49e'},
-    {name:'Minimal Slate',accent:'#8a99ad',today:'#cbd5e1',mark:'#f87171',event:'#fbbf24',border:'#334155',dayText:'#f8fafc',dayBg:'#0f172a',muted:'#64748b'},
-    {name:'High Contrast',accent:'#ffff00',today:'#00ffff',mark:'#ff0000',event:'#ff00ff',border:'#444444',dayText:'#ffffff',dayBg:'#000000',muted:'#aaaaaa'}
+    {name:'Purple',accent:'#6c5ce7',today:'#00cec9',mark:'#ff7675',event:'#fdcb6e',border:'#2a2a35',dayText:'#e8e8ed',dayBg:'#16161e',bg:'#0f0f13',card:'#16161e',panel:'#12121a',muted:'#8b8b9a'},
+    {name:'Ocean',accent:'#0984e3',today:'#00b894',mark:'#e17055',event:'#fdcb6e',border:'#1e3a5f',dayText:'#e8e8ed',dayBg:'#0f1c2e',bg:'#0a121c',card:'#0f1c2e',panel:'#0a1520',muted:'#7a9bb8'},
+    {name:'Forest',accent:'#00b894',today:'#55efc4',mark:'#d63031',event:'#ffeaa7',border:'#1a3c34',dayText:'#e8e8ed',dayBg:'#0f2a24',bg:'#0a1a16',card:'#0f2a24',panel:'#0a1f1a',muted:'#7aa89a'},
+    {name:'Sunset',accent:'#e17055',today:'#fdcb6e',mark:'#d63031',event:'#a29bfe',border:'#3d2a22',dayText:'#e8e8ed',dayBg:'#2a1a14',bg:'#1a100c',card:'#2a1a14',panel:'#1f120e',muted:'#b89a8a'},
+    {name:'Night',accent:'#636e72',today:'#74b9ff',mark:'#ff7675',event:'#a29bfe',border:'#2d3436',dayText:'#dfe6e9',dayBg:'#1e272e',bg:'#12171a',card:'#1e272e',panel:'#151b20',muted:'#636e72'},
+    {name:'Rose',accent:'#e84393',today:'#fd79a8',mark:'#d63031',event:'#ffeaa7',border:'#3d1f2e',dayText:'#e8e8ed',dayBg:'#2a1520',bg:'#1a0e14',card:'#2a1520',panel:'#1f0f18',muted:'#b87a9a'},
+    {name:'Neon Cyber',accent:'#00ffcc',today:'#ff007f',mark:'#ff0055',event:'#ffe600',border:'#1f1f3a',dayText:'#ffffff',dayBg:'#0b0c10',bg:'#050508',card:'#0b0c10',panel:'#06070a',muted:'#66fcf1'},
+    {name:'Pastel Lavender',accent:'#b8c0ff',today:'#c8b6ff',mark:'#ffc6ff',event:'#ffd6a5',border:'#3c3b52',dayText:'#f1f1f1',dayBg:'#22223b',bg:'#16162a',card:'#22223b',panel:'#1a1a2e',muted:'#9a8c98'},
+    {name:'Gold Luxury',accent:'#d4af37',today:'#f3e5ab',mark:'#e63946',event:'#f4a261',border:'#332d18',dayText:'#fefae0',dayBg:'#1a1810',bg:'#0f0e08',card:'#1a1810',panel:'#12100a',muted:'#b5a366'},
+    {name:'Emerald',accent:'#2ec4b6',today:'#cbf3f0',mark:'#e71d36',event:'#ff9f1c',border:'#173d38',dayText:'#ffffff',dayBg:'#091e1c',bg:'#050f0e',card:'#091e1c',panel:'#061412',muted:'#70a49e'},
+    {name:'Minimal Slate',accent:'#8a99ad',today:'#cbd5e1',mark:'#f87171',event:'#fbbf24',border:'#334155',dayText:'#f8fafc',dayBg:'#0f172a',bg:'#0a0e16',card:'#0f172a',panel:'#0a0f1a',muted:'#64748b'},
+    {name:'High Contrast',accent:'#ffff00',today:'#00ffff',mark:'#ff0000',event:'#ff00ff',border:'#444444',dayText:'#ffffff',dayBg:'#000000',bg:'#000000',card:'#000000',panel:'#0a0a0a',muted:'#aaaaaa'}
   ];
 
   presets.forEach(p => {
@@ -2155,12 +3073,85 @@
     themeRow.appendChild(sw);
   });
 
+  function renderSavedThemes() {
+    const row = document.getElementById('savedThemesRow');
+    if (!row) return;
+    row.innerHTML = '';
+    if (!savedThemes.length) {
+      row.innerHTML = '<span style="font-size:11px;color:var(--muted);" data-i18n="lblNoSavedThemes">No saved themes yet</span>';
+      return;
+    }
+    savedThemes.forEach((st, idx) => {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'display:inline-flex;align-items:center;gap:2px;margin:2px;';
+      const sw = document.createElement('div');
+      sw.className = 'theme-swatch';
+      sw.style.background = `linear-gradient(135deg, ${st.accent || '#6c5ce7'}, ${st.today || '#00cec9'})`;
+      sw.title = st.name || ('Theme ' + (idx + 1));
+      sw.addEventListener('click', () => {
+        const { name, ...colors } = st;
+        theme = { ...colors };
+        applyTheme();
+        save();
+      });
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.textContent = '×';
+      del.title = 'Delete theme';
+      del.style.cssText = 'background:none;border:none;color:var(--mark);cursor:pointer;font-size:14px;padding:0 2px;line-height:1;';
+      del.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!confirm('Delete theme "' + (st.name || '') + '"?')) return;
+        savedThemes.splice(idx, 1);
+        save();
+        renderSavedThemes();
+      });
+      wrap.appendChild(sw);
+      wrap.appendChild(del);
+      row.appendChild(wrap);
+    });
+  }
+
+  document.getElementById('saveThemeBtn').addEventListener('click', () => {
+    const nameInput = document.getElementById('saveThemeName');
+    const name = (nameInput.value || '').trim() || ('My theme ' + (savedThemes.length + 1));
+    // Snapshot from live pickers so the saved theme matches what you see
+    const g = id => { const el = document.getElementById(id); return el ? el.value : undefined; };
+    const snapshot = {
+      name,
+      accent: g('cAccent'),
+      today: g('cToday'),
+      mark: g('cMark'),
+      event: g('cEvent'),
+      border: g('cBorder'),
+      dayText: g('cDayText'),
+      dayBg: g('cDayBg'),
+      muted: g('cMuted'),
+      bg: g('cBg'),
+      card: g('cCard'),
+      panel: g('cPanel'),
+      font: (document.getElementById('fontSelect') || {}).value || theme.font
+    };
+    const existing = savedThemes.findIndex(t => t.name === name);
+    if (existing >= 0) savedThemes[existing] = snapshot;
+    else savedThemes.push(snapshot);
+    nameInput.value = '';
+    save();
+    renderSavedThemes();
+    showInAppToast('💾 ' + name, 'Theme saved', 'var(--accent)');
+  });
+
+  renderSavedThemes();
+
   const colorMap = {
     cAccent: 'accent', cToday: 'today', cMark: 'mark', cEvent: 'event',
-    cBorder: 'border', cDayText: 'dayText', cDayBg: 'dayBg', cMuted: 'muted'
+    cBorder: 'border', cDayText: 'dayText', cDayBg: 'dayBg', cMuted: 'muted',
+    cBg: 'bg', cCard: 'card', cPanel: 'panel'
   };
   Object.keys(colorMap).forEach(id => {
-    document.getElementById(id).addEventListener('input', e => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', e => {
       theme[colorMap[id]] = e.target.value;
       applyTheme(); save();
     });
@@ -2313,6 +3304,8 @@
   updatePhotoUI();
   startSmoothClock();
   render();
+  // Initial notification check (after a short delay so UI is ready)
+  setTimeout(checkUpcomingNotifications, 2500);
 </script>
 </body>
 </html>
