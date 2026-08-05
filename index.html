@@ -76,7 +76,14 @@
     margin-bottom: 30px;
     transform: scale(var(--scale));
     transform-origin: top center;
-    transition: transform 0.2s ease;
+    transition: transform 0.2s ease, zoom 0.2s ease;
+  }
+  /* Chrome / Edge / PWA: zoom keeps 1px lines sharp (better than transform scale) */
+  @supports (zoom: 1) {
+    .app {
+      transform: none;
+      zoom: var(--scale);
+    }
   }
 
   /* PHOTO & HEADER LAYOUT */
@@ -259,8 +266,8 @@
   .days {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 1px;
-    background: var(--day-border);
+    gap: 0;
+    background: transparent;
     border: 1px solid var(--day-border);
     margin: 0 10px 8px;
     border-radius: 8px;
@@ -286,6 +293,8 @@
     font-weight: 500;
     overflow: hidden;
     box-sizing: border-box;
+    /* Thin grid lines that stay even when the app is scaled */
+    box-shadow: inset -1px 0 0 var(--day-border), inset 0 -1px 0 var(--day-border);
   }
 
   .day:hover {
@@ -1911,12 +1920,18 @@
   const NOTIFY_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%236c5ce7'/%3E%3Ctext y='.9em' font-size='70' x='50%25' text-anchor='middle' fill='white'%3E📅%3C/text%3E%3C/svg%3E";
 
   // Nice in-app toast that matches the app style
-  function showInAppToast(title, body, accentColor) {
+  // options.stopAlarm: if true, closing/dismissing this toast also stops the alarm
+  function showInAppToast(title, body, accentColor, options = {}) {
     const old = document.getElementById('calToast');
-    if (old) old.remove();
+    if (old) {
+      // Dismissing previous toast — if it was a timed reminder, stop its alarm
+      if (old.dataset.stopAlarm === '1') stopAlarmSound();
+      old.remove();
+    }
 
     const toast = document.createElement('div');
     toast.id = 'calToast';
+    if (options.stopAlarm) toast.dataset.stopAlarm = '1';
     toast.innerHTML = `
       <div class="cal-toast-accent" style="background:${accentColor || 'var(--accent)'}"></div>
       <div class="cal-toast-content">
@@ -1928,9 +1943,14 @@
     document.body.appendChild(toast);
     requestAnimationFrame(() => toast.classList.add('show'));
 
+    let dismissed = false;
     const dismiss = () => {
+      if (dismissed) return;
+      dismissed = true;
       toast.classList.remove('show');
       setTimeout(() => toast.remove(), 300);
+      // Closing the reminder popup stops the alarm (repeat only extends play length, does not re-show popup)
+      if (options.stopAlarm) stopAlarmSound();
     };
     toast.querySelector('.cal-toast-close').onclick = dismiss;
     const stayMs = Math.max(3, Math.min(300, settings.toastDuration || 8)) * 1000;
@@ -1966,10 +1986,10 @@
   }
 
   async function showAppNotification(title, body, options = {}) {
-    // 1. Styled in-app toast
-    showInAppToast(title, body, options.accentColor);
+    // 1. Styled in-app toast — closing it stops the alarm
+    showInAppToast(title, body, options.accentColor, { stopAlarm: options.playSound !== false });
 
-    // 2. Alarm sound (respects mute + duration settings)
+    // 2. Alarm sound (respects mute + duration + repeat). Repeat only lengthens the sound; it does NOT re-show the popup.
     if (options.playSound !== false) {
       playAlarmSound();
     }
