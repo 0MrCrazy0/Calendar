@@ -1086,9 +1086,56 @@
     .day.today { background: #e0f7fa !important; font-weight: bold; }
     .day.other-month { opacity: 0.4; }
     .day-badge { background: #333 !important; color: #fff !important; }
-    .event-list { max-height: none !important; }
-    .event-item { border-bottom: 1px solid #eee !important; color: #000 !important; }
+    /* Hide the selected-day panel list — full month list is used instead */
+    .day-panel { display: none !important; }
     .event-actions, .delete-event, .edit-event, .dup-event { display: none !important; }
+    #printMonthEvents {
+      display: block !important;
+      margin: 16px 10px 8px;
+      padding: 0;
+      color: #000 !important;
+      page-break-inside: auto;
+    }
+    #printMonthEvents h3 {
+      font-size: 14px;
+      margin: 0 0 10px;
+      color: #000 !important;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 6px;
+    }
+    #printMonthEvents .print-ev {
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+      padding: 5px 0;
+      border-bottom: 1px solid #eee;
+      font-size: 12px;
+      color: #000 !important;
+      page-break-inside: avoid;
+    }
+    #printMonthEvents .print-ev-date {
+      min-width: 110px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    #printMonthEvents .print-ev-time {
+      min-width: 70px;
+      color: #333 !important;
+      flex-shrink: 0;
+    }
+    #printMonthEvents .print-ev-text {
+      flex: 1;
+    }
+    #printMonthEvents .print-empty {
+      font-size: 12px;
+      color: #666 !important;
+      font-style: italic;
+    }
+  }
+
+  /* Screen: keep print list out of the UI */
+  #printMonthEvents {
+    display: none;
   }
 </style>
 </head>
@@ -1150,7 +1197,10 @@
         </div>
 
         <input type="text" id="noteText" placeholder="Add note or event…">
-        <input type="time" id="noteTime" title="Optional Event Time">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <input type="time" id="noteTime" title="Optional Event Time" style="flex:1;margin-bottom:0;">
+          <span id="noteTimePreview" style="font-size:12px;color:var(--accent);font-weight:600;white-space:nowrap;min-width:4.5em;"></span>
+        </div>
 
         <div class="note-options">
           <input type="text" id="noteEmoji" placeholder="Emoji" maxlength="8" title="Paste one or multiple emojis">
@@ -1254,6 +1304,12 @@
           <label for="soundRepeatSlider"><span data-i18n="lblSoundRepeat">Repeat alarm (times)</span><span id="soundRepeatVal">1</span></label>
           <input type="range" id="soundRepeatSlider" min="1" max="5" value="1">
         </div>
+        <div class="slider-group" id="soundVolumeGroup">
+          <label for="soundVolumeSlider"><span data-i18n="lblSoundVolume">Alarm volume</span><span id="soundVolumeVal">85</span>%</label>
+          <input type="range" id="soundVolumeSlider" min="0" max="100" value="85">
+        </div>
+        <div id="notifyPermStatus" style="font-size:11px;color:var(--muted);margin:6px 0 4px;line-height:1.4;"></div>
+        <button type="button" class="action-setting-btn" id="requestNotifyBtn" style="display:none;margin-bottom:6px;" data-i18n="btnRequestNotify">🔔 Allow notifications</button>
       </div>
       <div class="toggle-row">
         <span data-i18n="lblWeekStart">Week starts on Monday</span>
@@ -1294,10 +1350,11 @@
         <div class="picker-group"><label for="cMuted" data-i18n="colMuted" title="Weekday labels (Mon, Tue…) and faded other-month days">Secondary text</label><input type="color" id="cMuted" value="#8b8b9a" title="Weekday labels (Mon, Tue…) and faded other-month days"></div>
       </div>
 
-      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px;" data-i18n="lblColorMark">Mark colour</div>
-      <p style="font-size:10px;color:var(--muted);margin:0 0 6px;line-height:1.35;" data-i18n="lblMarkHint">Default colour for the Mark Day button and mark dots. You can still choose a different colour for each day using the picker next to Mark Day.</p>
-      <div class="color-pickers" style="grid-template-columns:1fr;">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px;" data-i18n="lblColorMark">Mark &amp; day colours</div>
+      <p style="font-size:10px;color:var(--muted);margin:0 0 6px;line-height:1.35;" data-i18n="lblMarkHint">Default Mark Day colour, auto-marked past days, and today's highlight. You can still pick a different colour per day next to Mark Day.</p>
+      <div class="color-pickers">
         <div class="picker-group"><label for="cMark" data-i18n="colMark" title="Default colour for marks on days">Mark</label><input type="color" id="cMark" value="#ff7675" title="Default colour for marks on days"></div>
+        <div class="picker-group"><label for="cPastMark" data-i18n="colPastMark" title="Colour for auto-marked past days">Past mark</label><input type="color" id="cPastMark" value="#8b8b9a" title="Colour for auto-marked past days"></div>
       </div>
 
       <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -1360,6 +1417,9 @@
       <button class="reset-btn" id="resetTheme" data-i18n="btnReset">Reset All Styles</button>
     </div>
 
+    <!-- Print-only: full month event list (hidden on screen) -->
+    <div id="printMonthEvents" aria-hidden="true"></div>
+
     <div class="footer">• Simple Calendar •</div>
   </div>
 
@@ -1400,6 +1460,7 @@
   if (settings.soundEnabled === undefined) settings.soundEnabled = true;
   if (settings.soundDuration === undefined) settings.soundDuration = 5;
   if (settings.soundRepeat === undefined) settings.soundRepeat = 1;
+  if (settings.soundVolume === undefined) settings.soundVolume = 85;
   if (settings.weekStartMonday === undefined) settings.weekStartMonday = false;
   if (!settings.language) settings.language = 'en';
   let editingId = null; // for edit mode
@@ -1447,7 +1508,9 @@
       lblNotifySound: "Alarm sound",
       lblSoundDuration: "Sound plays (seconds)",
       lblSoundRepeat: "Repeat alarm (times)",
+      lblSoundVolume: "Alarm volume",
       btnStopAlarm: "⏹ Stop",
+      btnRequestNotify: "🔔 Allow notifications",
       btnPrint: "🖨️ Print Month",
       lblWeekStart: "Week starts on Monday",
       confirmClearBackup: "This will permanently delete ALL marks, notes, recurring events, categories and photos.\n\nDo you want to download a backup first?",
@@ -1470,19 +1533,21 @@
       lblNoSavedThemes: "No saved themes yet",
       lblColorPrimary: "App colours",
       lblColorGrid: "Calendar days",
-      lblColorMark: "Mark colour",
-      lblMarkHint: "Default colour for the Mark Day button and mark dots. You can still choose a different colour for each day using the picker next to Mark Day.",
+      lblColorMark: "Mark & day colours",
+      lblMarkHint: "Default Mark Day colour, auto-marked past days, and today's highlight. You can still pick a different colour per day next to Mark Day.",
       colAccent: "Accent",
       colToday: "Today",
       colBg: "Page background",
       colCard: "App card",
       colPanel: "Panel",
       colMark: "Mark",
+      colPastMark: "Past mark",
       colEvent: "Event badge",
       colBorder: "Grid lines",
       colDayText: "Day numbers",
       colDayBg: "Day cells",
       colMuted: "Secondary text",
+      markPastLocked: "Past day",
       lblFontLibrary: "Font Library (40+ Fonts)",
       lblUiScale: "UI Scale",
       lblZoom: "Zoom",
@@ -1541,7 +1606,9 @@
       lblNotifySound: "Tunog ng alarm",
       lblSoundDuration: "Gaano katagal ang tunog (segundo)",
       lblSoundRepeat: "Ulitin ang alarm (beses)",
+      lblSoundVolume: "Lakas ng alarm",
       btnStopAlarm: "⏹ Itigil",
+      btnRequestNotify: "🔔 Payagan ang notifications",
       btnPrint: "🖨️ I-print ang Buwan",
       lblWeekStart: "Magsimula ang linggo sa Lunes",
       confirmClearBackup: "Buburahin nito ang LAHAT ng marka, tala, paulit-ulit na kaganapan, kategorya at larawan.\n\nGusto mo bang mag-download muna ng backup?",
@@ -1564,19 +1631,21 @@
       lblNoSavedThemes: "Wala pang naka-save na tema",
       lblColorPrimary: "Mga kulay ng app",
       lblColorGrid: "Mga araw sa kalendaryo",
-      lblColorMark: "Kulay ng marka",
-      lblMarkHint: "Default na kulay para sa Mark Day at mark dots. Maaari pa ring pumili ng ibang kulay sa bawat araw sa tabi ng Mark Day.",
+      lblColorMark: "Marka at kulay ng araw",
+      lblMarkHint: "Default na kulay ng Mark Day, auto-mark ng nakaraan, at highlight ng ngayon. Maaari pa ring pumili ng ibang kulay sa bawat araw.",
       colAccent: "Accent",
       colToday: "Ngayon",
       colBg: "Background ng page",
       colCard: "App card",
       colPanel: "Panel",
       colMark: "Marka",
+      colPastMark: "Nakaraang marka",
       colEvent: "Badge ng kaganapan",
       colBorder: "Mga linya",
       colDayText: "Numero ng araw",
       colDayBg: "Mga cell",
       colMuted: "Pangalawang teksto",
+      markPastLocked: "Nakaraang araw",
       lblFontLibrary: "Silid-aklatan ng Font (40+ Font)",
       lblUiScale: "Laki ng UI",
       lblZoom: "Zoom",
@@ -1635,7 +1704,9 @@
       lblNotifySound: "Alarmlyd",
       lblSoundDuration: "Lyd spiller (sekunder)",
       lblSoundRepeat: "Gjenta alarm (ganger)",
+      lblSoundVolume: "Alarmvolum",
       btnStopAlarm: "⏹ Stopp",
+      btnRequestNotify: "🔔 Tillat varsler",
       btnPrint: "🖨️ Skriv ut måned",
       lblWeekStart: "Uken starter på mandag",
       confirmClearBackup: "Dette sletter ALLE merker, notater, gjentakende hendelser, kategorier og bilder.\n\nVil du laste ned en sikkerhetskopi først?",
@@ -1658,19 +1729,21 @@
       lblNoSavedThemes: "Ingen lagrede temaer ennå",
       lblColorPrimary: "App-farger",
       lblColorGrid: "Kalenderdager",
-      lblColorMark: "Markørfarge",
-      lblMarkHint: "Standardfarge for Marker dag og markørprikker. Du kan fortsatt velge en annen farge per dag ved siden av Marker dag.",
+      lblColorMark: "Markør- og dagsfarger",
+      lblMarkHint: "Standard Markør-farge, auto-marker for tidligere dager, og i dag-farge. Du kan fortsatt velge farge per dag.",
       colAccent: "Aksent",
       colToday: "I dag",
       colBg: "Sidebakgrunn",
       colCard: "App-kort",
       colPanel: "Panel",
       colMark: "Markør",
+      colPastMark: "Tidligere markør",
       colEvent: "Hendelsesmerke",
       colBorder: "Rutenett",
       colDayText: "Dagsnumre",
       colDayBg: "Dagsruter",
       colMuted: "Sekundær tekst",
+      markPastLocked: "Tidligere dag",
       lblFontLibrary: "Skriftbibliotek (40+ Skrifter)",
       lblUiScale: "UI Skala",
       lblZoom: "Zoom",
@@ -1813,7 +1886,7 @@
 
   function applyTheme(){
     const tTheme = {
-      accent:'#6c5ce7', today:'#00cec9', mark:'#ff7675', event:'#fdcb6e',
+      accent:'#6c5ce7', today:'#00cec9', mark:'#ff7675', pastMark:'#8b8b9a', event:'#fdcb6e',
       border:'#2a2a35', dayText:'#e8e8ed', dayBg:'#16161e', muted:'#8b8b9a',
       bg:'#0f0f13', card:'#16161e', panel:'#12121a',
       font: "Poppins, sans-serif", ...theme
@@ -1828,6 +1901,7 @@
     document.documentElement.style.setProperty('--today', tTheme.today);
     document.documentElement.style.setProperty('--today-text', todayTextColor);
     document.documentElement.style.setProperty('--mark', tTheme.mark);
+    document.documentElement.style.setProperty('--past-mark', tTheme.pastMark || tTheme.muted);
     document.documentElement.style.setProperty('--event', tTheme.event);
     document.documentElement.style.setProperty('--event-text', eventTextColor);
     document.documentElement.style.setProperty('--day-border', tTheme.border);
@@ -1850,6 +1924,7 @@
     setVal('cAccent', tTheme.accent);
     setVal('cToday', tTheme.today);
     setVal('cMark', tTheme.mark);
+    setVal('cPastMark', tTheme.pastMark || tTheme.muted);
     setVal('cEvent', tTheme.event);
     setVal('cBorder', tTheme.border);
     setVal('cDayText', tTheme.dayText);
@@ -2062,7 +2137,8 @@
     try {
       alarmAudio = new Audio('https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg');
       alarmAudio.loop = true;
-      alarmAudio.volume = 0.85;
+      const vol = Math.max(0, Math.min(100, settings.soundVolume ?? 85)) / 100;
+      alarmAudio.volume = vol;
       const playPromise = alarmAudio.play();
       if (playPromise && playPromise.catch) {
         playPromise.catch(err => console.warn('[Calendar] Alarm play blocked:', err.message));
@@ -2314,7 +2390,7 @@
 
     if (settings.autoMarkPast && k < todayStr && !marks[k]) {
       cell.classList.add('marked');
-      cell.style.setProperty('--mark-color', 'var(--muted)');
+      cell.style.setProperty('--mark-color', 'var(--past-mark, var(--muted))');
     }
 
     const dayNotes = getNotesForDate(date);
@@ -2421,16 +2497,36 @@
 
     const markBtn = document.getElementById('markBtn');
     const markPicker = document.getElementById('markColorPicker');
+    const todayStr = key(new Date());
+    const isPastDay = k < todayStr;
 
-    if (marks[k]) {
-      markBtn.classList.add('active');
-      markBtn.textContent = t('unmarkDay');
-      if (typeof marks[k] === 'string') {
+    if (isPastDay) {
+      markBtn.classList.remove('active');
+      markBtn.textContent = t('markPastLocked') || 'Past day';
+      markBtn.disabled = true;
+      markBtn.style.opacity = '0.45';
+      markBtn.style.cursor = 'not-allowed';
+      markPicker.disabled = true;
+      markPicker.style.opacity = '0.45';
+      if (marks[k] && typeof marks[k] === 'string') {
         markPicker.value = marks[k];
       }
     } else {
-      markBtn.classList.remove('active');
-      markBtn.textContent = t('markDay');
+      markBtn.disabled = false;
+      markBtn.style.opacity = '';
+      markBtn.style.cursor = '';
+      markPicker.disabled = false;
+      markPicker.style.opacity = '';
+      if (marks[k]) {
+        markBtn.classList.add('active');
+        markBtn.textContent = t('unmarkDay');
+        if (typeof marks[k] === 'string') {
+          markPicker.value = marks[k];
+        }
+      } else {
+        markBtn.classList.remove('active');
+        markBtn.textContent = t('markDay');
+      }
     }
 
     const list = document.getElementById('eventList');
@@ -2512,6 +2608,23 @@
     });
   }
 
+  function updateNoteTimePreview() {
+    const preview = document.getElementById('noteTimePreview');
+    const timeEl = document.getElementById('noteTime');
+    if (!preview || !timeEl) return;
+    const val = timeEl.value;
+    if (!val) {
+      preview.textContent = '';
+      return;
+    }
+    // Always show a clear 12h label when 24h mode is off (native picker UI is OS-dependent)
+    if (settings.use24Hour) {
+      preview.textContent = val;
+    } else {
+      preview.textContent = formatDisplayTime(val);
+    }
+  }
+
   function resetNoteForm() {
     document.getElementById('noteText').value = '';
     document.getElementById('noteTime').value = '';
@@ -2525,6 +2638,7 @@
     noteForm.classList.remove('open');
     toggleFormBtn.classList.remove('active');
     toggleFormBtn.textContent = t('addEventBtn');
+    updateNoteTimePreview();
   }
 
   function startEditEvent(id) {
@@ -2548,6 +2662,7 @@
     toggleFormBtn.classList.add('active');
     toggleFormBtn.textContent = t('closeFormBtn');
     document.getElementById('addNoteBtn').textContent = t('updateEventBtn');
+    updateNoteTimePreview();
   }
 
   function duplicateToNextWeek(id) {
@@ -2765,6 +2880,12 @@
 
   document.getElementById('markBtn').addEventListener('click', () => {
     const k = key(selected);
+    const todayStr = key(new Date());
+    // Only allow mark / unmark on today and future days
+    if (k < todayStr) {
+      showInAppToast(t('markPastLocked') || 'Past day', 'Mark Day works for today and future dates only', 'var(--mark)');
+      return;
+    }
     const color = document.getElementById('markColorPicker').value;
     if (marks[k]) {
       delete marks[k];
@@ -2776,6 +2897,8 @@
 
   document.getElementById('markColorPicker').addEventListener('input', (e) => {
     const k = key(selected);
+    const todayStr = key(new Date());
+    if (k < todayStr) return; // past days: colour picker does not change marks
     if (marks[k]) {
       marks[k] = e.target.value;
       save(); render();
@@ -2891,7 +3014,16 @@
   timeFormatToggle.addEventListener('change', e => {
     settings.use24Hour = e.target.checked;
     save();
+    updateNoteTimePreview();
+    // Refresh event list times + clock immediately
+    render();
   });
+
+  const noteTimeEl = document.getElementById('noteTime');
+  if (noteTimeEl) {
+    noteTimeEl.addEventListener('input', updateNoteTimePreview);
+    noteTimeEl.addEventListener('change', updateNoteTimePreview);
+  }
 
   const autoMarkPastToggle = document.getElementById('autoMarkPastToggle');
   autoMarkPastToggle.checked = settings.autoMarkPast;
@@ -2924,14 +3056,26 @@
   soundToggle.checked = settings.soundEnabled !== false;
   soundDurationGroup.style.display = settings.soundEnabled !== false ? 'block' : 'none';
   soundRepeatGroup.style.display = settings.soundEnabled !== false ? 'block' : 'none';
+  const soundVolumeGroup = document.getElementById('soundVolumeGroup');
+  const soundVolumeSlider = document.getElementById('soundVolumeSlider');
+  const soundVolumeVal = document.getElementById('soundVolumeVal');
+  if (soundVolumeGroup) soundVolumeGroup.style.display = settings.soundEnabled !== false ? 'block' : 'none';
   soundDurationSlider.value = settings.soundDuration ?? 5;
   soundDurationVal.textContent = settings.soundDuration ?? 5;
   soundRepeatSlider.value = settings.soundRepeat ?? 1;
   soundRepeatVal.textContent = settings.soundRepeat ?? 1;
+  if (soundVolumeSlider) {
+    soundVolumeSlider.value = settings.soundVolume ?? 85;
+    if (soundVolumeVal) soundVolumeVal.textContent = settings.soundVolume ?? 85;
+  }
 
   function isIOSDevice() {
     return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+
+  function isAndroidChrome() {
+    return /Android/i.test(navigator.userAgent) && /Chrome/i.test(navigator.userAgent);
   }
 
   function notificationHelpMessage(perm) {
@@ -2952,48 +3096,125 @@
       if (isIOS) {
         return 'Notifications are blocked for this app.\n\nOn iPhone/iPad:\n1. Install to Home Screen (Share → Add to Home Screen)\n2. Open Settings → Notifications → find this app or Safari\n3. Allow Notifications\n4. Fully close and reopen the app\n\nNote: iOS 16.4+ is required for web app notifications.';
       }
-      return 'Notifications are blocked for this site.\n\nTo fix on Android Chrome:\n1. Tap the lock / tune icon in the address bar\n2. Permissions → Notifications → Allow\n3. Or: Chrome menu → Settings → Site settings → Notifications\n4. Reload the page and turn Event Notifications on again\n\nOnce blocked, the browser will not ask again until you reset it.';
+      if (isAndroidChrome()) {
+        return 'Notifications are blocked for this site on Android Chrome.\n\nTo allow:\n1. Tap the lock / tune icon in the address bar\n2. Permissions → Notifications → Allow\n   (If you only see “Sound”, open Site settings → Notifications)\n3. Or: Chrome ⋮ → Settings → Site settings → Notifications → find this site → Allow\n4. Fully close the tab/app and reopen, then turn Event Notifications on again\n\nTip: Add to Home Screen and open from the icon can make permission prompts more reliable.';
+      }
+      return 'Notifications are blocked for this site.\n\nTo fix on Chrome:\n1. Tap the lock / tune icon in the address bar\n2. Permissions → Notifications → Allow\n3. Or: Chrome menu → Settings → Site settings → Notifications\n4. Reload the page and turn Event Notifications on again\n\nOnce blocked, the browser will not ask again until you reset it.';
     }
     return 'Could not enable notifications (status: ' + perm + '). Try reloading and allowing when prompted.';
   }
 
+  function updateNotifyPermUI() {
+    const statusEl = document.getElementById('notifyPermStatus');
+    const reqBtn = document.getElementById('requestNotifyBtn');
+    if (!statusEl) return;
+    // Fully hide status + button when system permission is already granted
+    if ('Notification' in window && window.isSecureContext && Notification.permission === 'granted') {
+      statusEl.style.display = 'none';
+      statusEl.textContent = '';
+      if (reqBtn) reqBtn.style.display = 'none';
+      return;
+    }
+    statusEl.style.display = 'block';
+    if (!('Notification' in window)) {
+      statusEl.textContent = isIOSDevice()
+        ? 'System notifications need Home Screen install on iOS.'
+        : 'Notifications not supported in this browser.';
+      statusEl.style.color = 'var(--muted)';
+      if (reqBtn) reqBtn.style.display = 'none';
+      return;
+    }
+    if (!window.isSecureContext) {
+      statusEl.textContent = 'Needs HTTPS for system notifications.';
+      statusEl.style.color = 'var(--mark)';
+      if (reqBtn) reqBtn.style.display = 'none';
+      return;
+    }
+    const perm = Notification.permission;
+    if (perm === 'denied') {
+      statusEl.textContent = 'System notifications blocked — use site settings to Allow (if you only see “Sound”, open Site settings → Notifications).';
+      statusEl.style.color = 'var(--mark)';
+      if (reqBtn) reqBtn.style.display = 'block';
+    } else {
+      // default — only show when user has turned the feature on
+      if (settings.notifyEnabled) {
+        statusEl.textContent = 'Permission not granted yet — turn the switch off/on or tap Allow notifications.';
+        statusEl.style.color = 'var(--muted)';
+        if (reqBtn) reqBtn.style.display = 'block';
+      } else {
+        statusEl.style.display = 'none';
+        statusEl.textContent = '';
+        if (reqBtn) reqBtn.style.display = 'none';
+      }
+    }
+  }
+
+  async function requestNotificationPermission() {
+    if (!('Notification' in window)) {
+      alert(notificationHelpMessage('unsupported'));
+      return false;
+    }
+    if (!window.isSecureContext) {
+      alert(notificationHelpMessage('insecure'));
+      return false;
+    }
+    let perm = Notification.permission;
+    if (perm === 'default') {
+      try {
+        perm = await Notification.requestPermission();
+      } catch (err) {
+        perm = Notification.permission;
+      }
+    }
+    updateNotifyPermUI();
+    if (perm !== 'granted') {
+      alert(notificationHelpMessage(perm));
+      return false;
+    }
+    return true;
+  }
+
+  const requestNotifyBtn = document.getElementById('requestNotifyBtn');
+  if (requestNotifyBtn) {
+    requestNotifyBtn.addEventListener('click', async () => {
+      const ok = await requestNotificationPermission();
+      if (ok) {
+        settings.notifyEnabled = true;
+        notifyToggle.checked = true;
+        notifyOptionsGroup.style.display = 'block';
+        save();
+        setTimeout(() => checkUpcomingNotifications(true), 300);
+        showInAppToast('Notifications on', 'System alerts allowed', 'var(--today)');
+      }
+    });
+  }
+
   notifyToggle.addEventListener('change', async e => {
     if (e.target.checked) {
-      if (!('Notification' in window)) {
-        alert(notificationHelpMessage('unsupported'));
-        e.target.checked = false;
-        return;
-      }
-      if (!window.isSecureContext) {
-        alert(notificationHelpMessage('insecure'));
-        e.target.checked = false;
-        return;
-      }
-      let perm = Notification.permission;
-      // Only request when still "default" — browsers ignore repeat prompts after deny
-      if (perm === 'default') {
-        try {
-          perm = await Notification.requestPermission();
-        } catch (err) {
-          perm = Notification.permission;
-        }
-      }
-      if (perm !== 'granted') {
-        alert(notificationHelpMessage(perm));
+      const ok = await requestNotificationPermission();
+      if (!ok) {
         e.target.checked = false;
         settings.notifyEnabled = false;
         notifyOptionsGroup.style.display = 'none';
         save();
+        updateNotifyPermUI();
         return;
       }
     }
     settings.notifyEnabled = e.target.checked;
     notifyOptionsGroup.style.display = settings.notifyEnabled ? 'block' : 'none';
     save();
+    updateNotifyPermUI();
     if (settings.notifyEnabled) {
       setTimeout(() => checkUpcomingNotifications(true), 300);
     }
   });
+
+  updateNotifyPermUI();
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') updateNotifyPermUI();
+  });
+
   notifyDaysSlider.addEventListener('input', e => {
     settings.notifyDaysAhead = +e.target.value;
     notifyDaysVal.textContent = settings.notifyDaysAhead;
@@ -3008,6 +3229,7 @@
     settings.soundEnabled = e.target.checked;
     soundDurationGroup.style.display = settings.soundEnabled ? 'block' : 'none';
     soundRepeatGroup.style.display = settings.soundEnabled ? 'block' : 'none';
+    if (soundVolumeGroup) soundVolumeGroup.style.display = settings.soundEnabled ? 'block' : 'none';
     if (!settings.soundEnabled) stopAlarmSound();
     save();
   });
@@ -3021,14 +3243,76 @@
     soundRepeatVal.textContent = settings.soundRepeat;
     save();
   });
+  if (soundVolumeSlider) {
+    soundVolumeSlider.addEventListener('input', e => {
+      settings.soundVolume = +e.target.value;
+      if (soundVolumeVal) soundVolumeVal.textContent = settings.soundVolume;
+      if (alarmAudio) {
+        try { alarmAudio.volume = Math.max(0, Math.min(100, settings.soundVolume)) / 100; } catch (_) {}
+      }
+      save();
+    });
+  }
 
   document.getElementById('stopAlarmBtn').addEventListener('click', () => {
     stopAlarmSound();
   });
 
+  function buildPrintMonthEvents() {
+    const box = document.getElementById('printMonthEvents');
+    if (!box) return;
+    const year = current.getFullYear();
+    const month = current.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const rows = [];
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(year, month, d);
+      const dayNotes = getNotesForDate(date);
+      dayNotes.forEach(n => {
+        rows.push({
+          date,
+          dateStr: key(date),
+          time: n.time || '',
+          emoji: n.emoji || '',
+          text: n.text || '',
+          completed: !!n.completed
+        });
+      });
+    }
+
+    // Sort by date, then time (empty time last within the day)
+    rows.sort((a, b) => {
+      if (a.dateStr !== b.dateStr) return a.dateStr < b.dateStr ? -1 : 1;
+      if (!a.time && !b.time) return 0;
+      if (!a.time) return 1;
+      if (!b.time) return -1;
+      return a.time < b.time ? -1 : a.time > b.time ? 1 : 0;
+    });
+
+    const monthLabel = getLocalizedDateString(current, { month: 'long', year: 'numeric' });
+    let html = `<h3>Events — ${monthLabel}</h3>`;
+    if (!rows.length) {
+      html += `<div class="print-empty">No events or notes this month.</div>`;
+    } else {
+      rows.forEach(r => {
+        const dateLabel = getLocalizedDateString(r.date, { weekday: 'short', month: 'short', day: 'numeric' });
+        const timeLabel = r.time ? formatDisplayTime(r.time) : '—';
+        const title = (r.emoji ? r.emoji + ' ' : '') + r.text;
+        const done = r.completed ? ' style="text-decoration:line-through;opacity:0.7"' : '';
+        html += `<div class="print-ev">
+          <span class="print-ev-date">${dateLabel}</span>
+          <span class="print-ev-time">${timeLabel}</span>
+          <span class="print-ev-text"${done}>${title}</span>
+        </div>`;
+      });
+    }
+    box.innerHTML = html;
+  }
+
   document.getElementById('printMonthBtn').addEventListener('click', () => {
-    // Close settings so print layout is clean, then print
     document.getElementById('settingsPanel').classList.remove('open');
+    buildPrintMonthEvents();
     setTimeout(() => window.print(), 150);
   });
 
@@ -3136,16 +3420,24 @@
         document.getElementById('soundToggle').checked = settings.soundEnabled !== false;
         document.getElementById('soundDurationGroup').style.display = settings.soundEnabled !== false ? 'block' : 'none';
         document.getElementById('soundRepeatGroup').style.display = settings.soundEnabled !== false ? 'block' : 'none';
+        const svg = document.getElementById('soundVolumeGroup');
+        if (svg) svg.style.display = settings.soundEnabled !== false ? 'block' : 'none';
         document.getElementById('soundDurationSlider').value = settings.soundDuration ?? 5;
         document.getElementById('soundDurationVal').textContent = settings.soundDuration ?? 5;
         document.getElementById('soundRepeatSlider').value = settings.soundRepeat ?? 1;
         document.getElementById('soundRepeatVal').textContent = settings.soundRepeat ?? 1;
+        const svs = document.getElementById('soundVolumeSlider');
+        const svv = document.getElementById('soundVolumeVal');
+        if (svs) svs.value = settings.soundVolume ?? 85;
+        if (svv) svv.textContent = settings.soundVolume ?? 85;
         document.getElementById('weekStartToggle').checked = !!settings.weekStartMonday;
         document.getElementById('languageSelect').value = settings.language || 'en';
 
         updatePhotoUI();
         renderCustomCategoriesUI();
         renderSavedThemes();
+        updateNotifyPermUI();
+        updateNoteTimePreview();
         render();
         alert('Data imported successfully!');
       } catch (err) {
@@ -3290,6 +3582,7 @@
       accent: g('cAccent'),
       today: g('cToday'),
       mark: g('cMark'),
+      pastMark: g('cPastMark'),
       event: g('cEvent'),
       border: g('cBorder'),
       dayText: g('cDayText'),
@@ -3312,7 +3605,7 @@
   renderSavedThemes();
 
   const colorMap = {
-    cAccent: 'accent', cToday: 'today', cMark: 'mark', cEvent: 'event',
+    cAccent: 'accent', cToday: 'today', cMark: 'mark', cPastMark: 'pastMark', cEvent: 'event',
     cBorder: 'border', cDayText: 'dayText', cDayBg: 'dayBg', cMuted: 'muted',
     cBg: 'bg', cCard: 'card', cPanel: 'panel'
   };
