@@ -1548,7 +1548,7 @@
       colDayBg: "Day cells",
       colMuted: "Secondary text",
       markPastLocked: "Past day",
-      lblFontLibrary: "Font Library (40+ Fonts)",
+      lblFontLibrary: "Font Library",
       lblUiScale: "UI Scale",
       lblZoom: "Zoom",
       lblPhotoSettings: "Month Photo Settings",
@@ -1990,18 +1990,34 @@
     document.body.style.overflowY = 'auto';
   }
 
+  const OFFLINE_PHOTO =
+    "data:image/svg+xml," + encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">` +
+      `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">` +
+      `<stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#16213e"/></linearGradient></defs>` +
+      `<rect width="800" height="400" fill="url(#g)"/>` +
+      `<text x="400" y="200" text-anchor="middle" fill="#8b8b9a" font-family="sans-serif" font-size="22">Offline · no photo</text>` +
+      `</svg>`
+    );
+
   function loadMonthPhoto(){
     const mk = monthKey(current);
     const img = document.getElementById('monthPhoto');
     clearInterval(randomTimer);
+    img.onerror = () => { img.onerror = null; img.src = OFFLINE_PHOTO; };
 
     if (settings.photoMode === 'custom' && monthPhotos[mk]) {
       img.src = monthPhotos[mk];
       return;
     }
+    if (!navigator.onLine) {
+      img.src = OFFLINE_PHOTO;
+      return;
+    }
     if (settings.photoMode === 'random') {
       img.src = `https://picsum.photos/800/400?random=${Date.now()}`;
       randomTimer = setInterval(() => {
+        if (!navigator.onLine) { img.src = OFFLINE_PHOTO; return; }
         img.src = `https://picsum.photos/800/400?random=${Date.now()}`;
       }, (settings.randomInterval || 30) * 1000);
       return;
@@ -2011,15 +2027,20 @@
   }
 
   function renderCustomCategoriesUI(){
+    // Migrate legacy categories that only have color (no id)
+    customCategories.forEach(cat => {
+      if (!cat.id) cat.id = uid();
+    });
+
     const select = document.getElementById('eventCategory');
     const existingCustoms = select.querySelectorAll('.custom-opt');
     existingCustoms.forEach(opt => opt.remove());
 
     const newOpt = select.querySelector('option[value="__NEW__"]');
 
-    customCategories.forEach((cat, idx) => {
+    customCategories.forEach((cat) => {
       const opt = document.createElement('option');
-      opt.value = cat.color;
+      opt.value = 'cat:' + cat.id;
       opt.textContent = `${cat.emoji || '📌'} ${cat.name}`;
       opt.className = 'custom-opt';
       select.insertBefore(opt, newOpt);
@@ -2032,8 +2053,8 @@
       item.className = 'cat-item';
       item.innerHTML = `
         <div class="cat-item-info">
-          <span class="cat-item-color" style="background:${cat.color}"></span>
-          <span>${cat.emoji || '📌'} ${cat.name}</span>
+          <span class="cat-item-color" style="background:${escapeHtml(cat.color)}"></span>
+          <span>${escapeHtml(cat.emoji || '📌')} ${escapeHtml(cat.name)}</span>
         </div>
         <button class="delete-cat-btn" data-idx="${idx}" title="Delete Category">×</button>
       `;
@@ -2124,32 +2145,83 @@
     stayTimer = setTimeout(() => dismiss(true), stayMs);
   }
 
+  let alarmCtx = null;
+  let alarmOsc = null;
+  let alarmGain = null;
+
   function stopAlarmSound() {
     if (alarmStopTimer) { clearTimeout(alarmStopTimer); alarmStopTimer = null; }
     if (alarmAudio) {
       try { alarmAudio.pause(); alarmAudio.currentTime = 0; } catch (_) {}
+    }
+    try {
+      if (alarmOsc) { alarmOsc.stop(); alarmOsc.disconnect(); }
+      if (alarmGain) alarmGain.disconnect();
+    } catch (_) {}
+    alarmOsc = null;
+    alarmGain = null;
+  }
+
+  function playLocalBeep(vol, totalSecs) {
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return false;
+      if (!alarmCtx) alarmCtx = new AC();
+      if (alarmCtx.state === 'suspended') alarmCtx.resume();
+      const osc = alarmCtx.createOscillator();
+      const gain = alarmCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.value = 880;
+      gain.gain.value = Math.max(0.01, Math.min(1, vol)) * 0.25;
+      osc.connect(gain);
+      gain.connect(alarmCtx.destination);
+      osc.start();
+      // Pulse pattern
+      let on = true;
+      const pulse = setInterval(() => {
+        if (!alarmOsc) { clearInterval(pulse); return; }
+        on = !on;
+        try { gain.gain.value = on ? Math.max(0.01, Math.min(1, vol)) * 0.25 : 0.001; } catch (_) {}
+      }, 400);
+      alarmOsc = osc;
+      alarmGain = gain;
+      alarmStopTimer = setTimeout(() => { clearInterval(pulse); stopAlarmSound(); }, totalSecs * 1000);
+      return true;
+    } catch (e) {
+      console.warn('[Calendar] Local beep failed', e);
+      return false;
     }
   }
 
   function playAlarmSound() {
     if (!settings.soundEnabled) return;
     stopAlarmSound();
+    const vol = Math.max(0, Math.min(100, settings.soundVolume ?? 85)) / 100;
+    const oneShot = Math.max(1, Math.min(60, settings.soundDuration || 5));
+    const times = Math.max(1, Math.min(5, settings.soundRepeat || 1));
+    const totalSecs = Math.min(300, oneShot * times);
+
+    const useLocal = () => playLocalBeep(vol, totalSecs);
+
+    if (!navigator.onLine) {
+      useLocal();
+      return;
+    }
     try {
       alarmAudio = new Audio('https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg');
       alarmAudio.loop = true;
-      const vol = Math.max(0, Math.min(100, settings.soundVolume ?? 85)) / 100;
       alarmAudio.volume = vol;
       const playPromise = alarmAudio.play();
       if (playPromise && playPromise.catch) {
-        playPromise.catch(err => console.warn('[Calendar] Alarm play blocked:', err.message));
+        playPromise.catch(err => {
+          console.warn('[Calendar] Alarm play blocked:', err.message);
+          useLocal();
+        });
       }
-      // Each "play" length × how many times to repeat (max ~5 min total)
-      const oneShot = Math.max(1, Math.min(60, settings.soundDuration || 5));
-      const times = Math.max(1, Math.min(5, settings.soundRepeat || 1));
-      const totalSecs = Math.min(300, oneShot * times); // hard cap 5 minutes
       alarmStopTimer = setTimeout(stopAlarmSound, totalSecs * 1000);
     } catch (err) {
       console.warn('[Calendar] Alarm sound error:', err);
+      useLocal();
     }
   }
 
@@ -2361,7 +2433,14 @@
 
       if (isMatch) {
         if (!list.find(n => n.id === r.id)) {
-          list.push({ ...r, recurring: true });
+          const completedDates = r.completedDates && typeof r.completedDates === 'object' ? r.completedDates : {};
+          // Per-occurrence complete: this date only (legacy r.completed ignored for series)
+          list.push({
+            ...r,
+            recurring: true,
+            completed: !!completedDates[k],
+            completedDates
+          });
         }
       }
     });
@@ -2470,13 +2549,44 @@
     renderCustomCategoriesUI();
   }
 
+  function escapeHtml(s) {
+    return String(s ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function formatTextSpan(text, styles){
     let css = [];
     if (styles?.bold) css.push('font-weight: bold;');
     if (styles?.italic) css.push('font-style: italic;');
     if (styles?.strike) css.push('text-decoration: line-through;');
     
-    return `<span style="${css.join(' ')}">${text}</span>`;
+    return `<span style="${css.join(' ')}">${escapeHtml(text)}</span>`;
+  }
+
+  function resolveCategory(selectVal) {
+    // Built-in colours are hex; custom categories use "cat:<id>"
+    if (!selectVal || selectVal === '__NEW__') {
+      return { categoryColor: '#fdcb6e', categoryId: null };
+    }
+    if (String(selectVal).startsWith('cat:')) {
+      const id = String(selectVal).slice(4);
+      const cat = customCategories.find(c => c.id === id);
+      if (cat) return { categoryColor: cat.color || '#fdcb6e', categoryId: cat.id };
+      return { categoryColor: '#fdcb6e', categoryId: null };
+    }
+    return { categoryColor: selectVal, categoryId: null };
+  }
+
+  function categorySelectValue(note) {
+    if (note && note.categoryId) {
+      const cat = customCategories.find(c => c.id === note.categoryId);
+      if (cat) return 'cat:' + cat.id;
+    }
+    return note?.categoryColor || '#fdcb6e';
   }
 
   function formatDisplayTime(timeStr) {
@@ -2500,7 +2610,8 @@
     const todayStr = key(new Date());
     const isPastDay = k < todayStr;
 
-    if (isPastDay) {
+    // Past days: cannot ADD a mark, but can UNMARK a user-set mark (auto-mark is visual-only)
+    if (isPastDay && !marks[k]) {
       markBtn.classList.remove('active');
       markBtn.textContent = t('markPastLocked') || 'Past day';
       markBtn.disabled = true;
@@ -2508,9 +2619,6 @@
       markBtn.style.cursor = 'not-allowed';
       markPicker.disabled = true;
       markPicker.style.opacity = '0.45';
-      if (marks[k] && typeof marks[k] === 'string') {
-        markPicker.value = marks[k];
-      }
     } else {
       markBtn.disabled = false;
       markBtn.style.opacity = '';
@@ -2567,9 +2675,21 @@
       chk.addEventListener('change', (e) => {
         const id = chk.dataset.id;
         const targetList = notes[k] || [];
-        const note = targetList.find(n => n.id === id) || recurring.find(r => r.id === id);
-        if (note) {
-          note.completed = e.target.checked;
+        const oneOff = targetList.find(n => n.id === id);
+        if (oneOff) {
+          oneOff.completed = e.target.checked;
+          save();
+          render();
+          return;
+        }
+        // Recurring: complete only this occurrence (this date)
+        const rec = recurring.find(r => r.id === id);
+        if (rec) {
+          if (!rec.completedDates || typeof rec.completedDates !== 'object') rec.completedDates = {};
+          if (e.target.checked) rec.completedDates[k] = true;
+          else delete rec.completedDates[k];
+          // Clear legacy whole-series flag if present
+          if (rec.completed) delete rec.completed;
           save();
           render();
         }
@@ -2651,7 +2771,7 @@
     document.getElementById('noteTime').value = note.time || '';
     document.getElementById('noteEmoji').value = note.emoji || '';
     document.getElementById('noteRepeat').value = note.repeat || 'none';
-    document.getElementById('eventCategory').value = note.categoryColor || '#fdcb6e';
+    document.getElementById('eventCategory').value = categorySelectValue(note);
 
     activeStyles = { bold: !!note.styles?.bold, italic: !!note.styles?.italic, strike: !!note.styles?.strike };
     document.getElementById('btnBold').classList.toggle('active', activeStyles.bold);
@@ -2700,8 +2820,10 @@
 
     Object.keys(notes).forEach(dateStr => {
       notes[dateStr].forEach(n => {
-        const catName = (customCategories.find(c => c.color === n.categoryColor) || {}).name || '';
-        if (dateStr.includes(query) || n.text.toLowerCase().includes(query) ||
+        const cat = customCategories.find(c => c.id === n.categoryId) ||
+          customCategories.find(c => c.color === n.categoryColor);
+        const catName = cat ? cat.name : '';
+        if (dateStr.includes(query) || (n.text || '').toLowerCase().includes(query) ||
             (n.emoji && n.emoji.includes(query)) ||
             (catName && catName.toLowerCase().includes(query))) {
           matches.push({ date: new Date(dateStr + 'T00:00:00'), text: n.text, emoji: n.emoji || '' });
@@ -2717,12 +2839,13 @@
     });
 
     recurring.forEach(r => {
-      const catName = (customCategories.find(c => c.color === r.categoryColor) || {}).name || '';
-      if (r.text.toLowerCase().includes(query) || (r.emoji && r.emoji.includes(query)) ||
+      const cat = customCategories.find(c => c.id === r.categoryId) ||
+        customCategories.find(c => c.color === r.categoryColor);
+      const catName = cat ? cat.name : '';
+      if ((r.text || '').toLowerCase().includes(query) || (r.emoji && r.emoji.includes(query)) ||
           (catName && catName.toLowerCase().includes(query))) {
         let matchDate = new Date(current.getFullYear(), (r.month || 1) - 1, r.day || 1);
         if (r.startDate) {
-          // Safe parse: YYYY-MM-DD or legacy ISO, avoid UTC day-shift
           matchDate = (typeof r.startDate === 'string' && !r.startDate.includes('T'))
             ? new Date(r.startDate + 'T12:00:00')
             : new Date(r.startDate);
@@ -2732,14 +2855,15 @@
     });
 
     if (matches.length === 0) {
-      resultsContainer.innerHTML = `<div class="search-item">${t('noMatches')}</div>`;
+      resultsContainer.innerHTML = `<div class="search-item">${escapeHtml(t('noMatches'))}</div>`;
       return;
     }
 
     matches.slice(0, 8).forEach(m => {
       const item = document.createElement('div');
       item.className = 'search-item';
-      item.innerHTML = `<span><strong>${getLocalizedDateString(m.date, {month:'short', day:'numeric', year:'numeric'})}</strong>: ${m.emoji} ${m.text}</span>`;
+      const dateLabel = getLocalizedDateString(m.date, {month:'short', day:'numeric', year:'numeric'});
+      item.innerHTML = `<span><strong>${escapeHtml(dateLabel)}</strong>: ${escapeHtml(m.emoji)} ${escapeHtml(m.text)}</span>`;
       item.addEventListener('click', () => {
         selected = new Date(m.date);
         current = new Date(m.date.getFullYear(), m.date.getMonth(), 1);
@@ -2749,6 +2873,12 @@
       });
       resultsContainer.appendChild(item);
     });
+  }
+
+  let searchDebounceTimer = null;
+  function scheduleSearch() {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(executeSearch, 250);
   }
 
   /* SWIPE GESTURES FOR MONTH NAVIGATION */
@@ -2833,11 +2963,13 @@
 
     if (!name) return;
 
-    customCategories.push({ name, emoji, color });
+    const id = uid();
+    customCategories.push({ id, name, emoji, color });
     save();
     renderCustomCategoriesUI();
 
-    document.getElementById('eventCategory').value = color;
+    document.getElementById('eventCategory').value = 'cat:' + id;
+    document.getElementById('customCatBox').classList.remove('open');
     nameInput.value = '';
     emojiInput.value = '';
   });
@@ -2862,7 +2994,8 @@
   });
 
   document.getElementById('searchBtn').addEventListener('click', executeSearch);
-  document.getElementById('searchBox').addEventListener('keyup', () => executeSearch());
+  document.getElementById('searchBox').addEventListener('keyup', scheduleSearch);
+  document.getElementById('searchBox').addEventListener('input', scheduleSearch);
 
   document.getElementById('todayBtn').addEventListener('click', () => {
     const now = new Date();
@@ -2881,9 +3014,10 @@
   document.getElementById('markBtn').addEventListener('click', () => {
     const k = key(selected);
     const todayStr = key(new Date());
-    // Only allow mark / unmark on today and future days
-    if (k < todayStr) {
-      showInAppToast(t('markPastLocked') || 'Past day', 'Mark Day works for today and future dates only', 'var(--mark)');
+    const isPast = k < todayStr;
+    // Past: only allow removing an existing user mark (not adding new marks)
+    if (isPast && !marks[k]) {
+      showInAppToast(t('markPastLocked') || 'Past day', 'You can only unmark past days that you marked earlier', 'var(--mark)');
       return;
     }
     const color = document.getElementById('markColorPicker').value;
@@ -2897,8 +3031,7 @@
 
   document.getElementById('markColorPicker').addEventListener('input', (e) => {
     const k = key(selected);
-    const todayStr = key(new Date());
-    if (k < todayStr) return; // past days: colour picker does not change marks
+    // Allow recolouring existing user marks (including past); ignore if no mark
     if (marks[k]) {
       marks[k] = e.target.value;
       save(); render();
@@ -2910,8 +3043,7 @@
     if (!text) return;
     const time = document.getElementById('noteTime').value;
     const emoji = document.getElementById('noteEmoji').value.trim();
-    let categoryColor = document.getElementById('eventCategory').value;
-    if (categoryColor === '__NEW__') categoryColor = '#fdcb6e';
+    const { categoryColor, categoryId } = resolveCategory(document.getElementById('eventCategory').value);
 
     const repeatVal = document.getElementById('noteRepeat').value;
     const styles = { ...activeStyles };
@@ -2930,21 +3062,29 @@
         note.time = time;
         note.emoji = emoji;
         note.categoryColor = categoryColor;
+        note.categoryId = categoryId || undefined;
         note.styles = styles;
         if (isRec) {
           note.repeat = repeatVal;
           if (repeatVal === 'none') {
             // Convert recurring → one-off on selected day
+            const wasCompletedToday = !!(note.completedDates && note.completedDates[k]);
             recurring = recurring.filter(r => r.id !== editingId);
             if (!notes[k]) notes[k] = [];
-            notes[k].push({ id: editingId, text, time, emoji, categoryColor, styles, completed: note.completed || false });
+            notes[k].push({
+              id: editingId, text, time, emoji, categoryColor, categoryId: categoryId || undefined,
+              styles, completed: wasCompletedToday
+            });
           }
         } else if (repeatVal !== 'none') {
           // Convert one-off → recurring
           notes[k] = (notes[k] || []).filter(n => n.id !== editingId);
           if (!notes[k] || !notes[k].length) delete notes[k];
+          const completedDates = {};
+          if (note.completed) completedDates[k] = true;
           recurring.push({
-            id: editingId, text, time, emoji, categoryColor, styles, completed: note.completed || false,
+            id: editingId, text, time, emoji, categoryColor, categoryId: categoryId || undefined,
+            styles, completedDates,
             repeat: repeatVal,
             startDate: key(selected),
             month: selected.getMonth()+1,
@@ -2958,7 +3098,8 @@
       const id = uid();
       if (repeatVal !== 'none') {
         recurring.push({
-          id, text, time, emoji, categoryColor, styles, completed: false,
+          id, text, time, emoji, categoryColor, categoryId: categoryId || undefined,
+          styles, completedDates: {},
           repeat: repeatVal,
           startDate: key(selected),
           month: selected.getMonth()+1,
@@ -2967,7 +3108,10 @@
       } else {
         const k = key(selected);
         if (!notes[k]) notes[k] = [];
-        notes[k].push({ id, text, time, emoji, categoryColor, styles, completed: false });
+        notes[k].push({
+          id, text, time, emoji, categoryColor, categoryId: categoryId || undefined,
+          styles, completed: false
+        });
       }
     }
 
@@ -3298,11 +3442,11 @@
       rows.forEach(r => {
         const dateLabel = getLocalizedDateString(r.date, { weekday: 'short', month: 'short', day: 'numeric' });
         const timeLabel = r.time ? formatDisplayTime(r.time) : '—';
-        const title = (r.emoji ? r.emoji + ' ' : '') + r.text;
+        const title = escapeHtml((r.emoji ? r.emoji + ' ' : '') + r.text);
         const done = r.completed ? ' style="text-decoration:line-through;opacity:0.7"' : '';
         html += `<div class="print-ev">
-          <span class="print-ev-date">${dateLabel}</span>
-          <span class="print-ev-time">${timeLabel}</span>
+          <span class="print-ev-date">${escapeHtml(dateLabel)}</span>
+          <span class="print-ev-time">${escapeHtml(timeLabel)}</span>
           <span class="print-ev-text"${done}>${title}</span>
         </div>`;
       });
@@ -3455,6 +3599,23 @@
       .replace(/,/g, '\\,')
       .replace(/\n/g, ' ');
     const tzName = (Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC').replace(/[^a-zA-Z0-9/_+-]/g, '');
+
+    function addHour(cleanDate, hhmmss) {
+      // cleanDate=YYYYMMDD, hhmmss=HHMMSS → return {date, time} one hour later
+      const y = +cleanDate.slice(0, 4), mo = +cleanDate.slice(4, 6) - 1, d = +cleanDate.slice(6, 8);
+      const h = +hhmmss.slice(0, 2), mi = +hhmmss.slice(2, 4), s = +hhmmss.slice(4, 6) || 0;
+      const dt = new Date(y, mo, d, h, mi, s);
+      dt.setHours(dt.getHours() + 1);
+      const cd = `${dt.getFullYear()}${String(dt.getMonth()+1).padStart(2,'0')}${String(dt.getDate()).padStart(2,'0')}`;
+      const ct = `${String(dt.getHours()).padStart(2,'0')}${String(dt.getMinutes()).padStart(2,'0')}${String(dt.getSeconds()).padStart(2,'0')}`;
+      return { date: cd, time: ct };
+    }
+    function nextDay(cleanDate) {
+      const y = +cleanDate.slice(0, 4), mo = +cleanDate.slice(4, 6) - 1, d = +cleanDate.slice(6, 8);
+      const dt = new Date(y, mo, d + 1);
+      return `${dt.getFullYear()}${String(dt.getMonth()+1).padStart(2,'0')}${String(dt.getDate()).padStart(2,'0')}`;
+    }
+
     let icsContent = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Simple Calendar//EN\r\nCALSCALE:GREGORIAN\r\n";
     icsContent += `X-WR-TIMEZONE:${tzName}\r\n`;
     
@@ -3466,15 +3627,18 @@
         icsContent += `SUMMARY:${icsEscape((n.emoji ? n.emoji + ' ' : '') + (n.text || ''))}\r\n`;
         if (n.time) {
           const t = n.time.replace(':', '') + '00';
-          icsContent += `DTSTART:${cleanDate}T${t}\r\n`;
+          // Floating local time + TZID hint (no full VTIMEZONE block)
+          icsContent += `DTSTART;TZID=${tzName}:${cleanDate}T${t}\r\n`;
+          const end = addHour(cleanDate, t);
+          icsContent += `DTEND;TZID=${tzName}:${end.date}T${end.time}\r\n`;
         } else {
           icsContent += `DTSTART;VALUE=DATE:${cleanDate}\r\n`;
+          icsContent += `DTEND;VALUE=DATE:${nextDay(cleanDate)}\r\n`;
         }
         icsContent += "END:VEVENT\r\n";
       });
     });
 
-    // Export recurring as yearly or with basic RRULE (best-effort)
     recurring.forEach(r => {
       const start = parseStartDate(r, new Date());
       const cleanDate = key(start).replace(/-/g, '');
@@ -3483,9 +3647,12 @@
       icsContent += `SUMMARY:${icsEscape((r.emoji ? r.emoji + ' ' : '') + (r.text || '') + ' (recurring)')}\r\n`;
       if (r.time) {
         const t = r.time.replace(':', '') + '00';
-        icsContent += `DTSTART:${cleanDate}T${t}\r\n`;
+        icsContent += `DTSTART;TZID=${tzName}:${cleanDate}T${t}\r\n`;
+        const end = addHour(cleanDate, t);
+        icsContent += `DTEND;TZID=${tzName}:${end.date}T${end.time}\r\n`;
       } else {
         icsContent += `DTSTART;VALUE=DATE:${cleanDate}\r\n`;
+        icsContent += `DTEND;VALUE=DATE:${nextDay(cleanDate)}\r\n`;
       }
       if (r.repeat === 'daily') icsContent += "RRULE:FREQ=DAILY\r\n";
       else if (r.repeat === 'weekly') icsContent += "RRULE:FREQ=WEEKLY\r\n";
