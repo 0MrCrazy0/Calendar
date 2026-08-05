@@ -1025,6 +1025,22 @@
   .cal-toast-close:hover {
     color: var(--text);
   }
+  .cal-toast-snooze {
+    margin-top: 8px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: var(--font);
+  }
+  .cal-toast-snooze:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-text);
+  }
 
   /* CLEAN PRINT STYLESHEET */
   @media print {
@@ -1861,10 +1877,11 @@
     const label = document.getElementById('scaleVal');
 
     // How large can we go without overflowing the window horizontally?
-    const pad = 20; // body padding allowance
+    const pad = 20;
     const available = Math.max(280, window.innerWidth - pad);
-    const maxScaleByViewport = Math.floor((available / APP_BASE_WIDTH) * 100);
-    // Never force smaller than 70; clamp high scale so buttons aren't cut off
+    let maxScaleByViewport = Math.floor((available / APP_BASE_WIDTH) * 100);
+    // Avoid awkward 101–114% "fits screen" values — use a clean 100% ceiling near base width
+    if (maxScaleByViewport > 100 && maxScaleByViewport < 115) maxScaleByViewport = 100;
     const applied = Math.min(requested, Math.max(70, maxScaleByViewport));
     const factor = applied / 100;
 
@@ -1972,11 +1989,10 @@
   const NOTIFY_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%236c5ce7'/%3E%3Ctext y='.9em' font-size='70' x='50%25' text-anchor='middle' fill='white'%3E📅%3C/text%3E%3C/svg%3E";
 
   // Nice in-app toast that matches the app style
-  // options.stopAlarm: if true, closing/dismissing this toast also stops the alarm
+  // options.stopAlarm: closing stops alarm | options.snooze: show Snooze 5 min button
   function showInAppToast(title, body, accentColor, options = {}) {
     const old = document.getElementById('calToast');
     if (old) {
-      // Dismissing previous toast — if it was a timed reminder, stop its alarm
       if (old.dataset.stopAlarm === '1') stopAlarmSound();
       old.remove();
     }
@@ -1984,11 +2000,15 @@
     const toast = document.createElement('div');
     toast.id = 'calToast';
     if (options.stopAlarm) toast.dataset.stopAlarm = '1';
+    const snoozeBtn = options.snooze
+      ? `<button type="button" class="cal-toast-snooze" title="Remind again in 5 minutes">Snooze 5m</button>`
+      : '';
     toast.innerHTML = `
       <div class="cal-toast-accent" style="background:${accentColor || 'var(--accent)'}"></div>
       <div class="cal-toast-content">
         <div class="cal-toast-title">${title}</div>
         <div class="cal-toast-body">${body}</div>
+        ${snoozeBtn}
       </div>
       <button class="cal-toast-close" aria-label="Dismiss">×</button>
     `;
@@ -1996,17 +2016,37 @@
     requestAnimationFrame(() => toast.classList.add('show'));
 
     let dismissed = false;
-    const dismiss = () => {
+    let stayTimer = null;
+    const dismiss = (stopAlarm = true) => {
       if (dismissed) return;
       dismissed = true;
+      if (stayTimer) clearTimeout(stayTimer);
       toast.classList.remove('show');
       setTimeout(() => toast.remove(), 300);
-      // Closing the reminder popup stops the alarm (repeat only extends play length, does not re-show popup)
-      if (options.stopAlarm) stopAlarmSound();
+      if (stopAlarm && options.stopAlarm) stopAlarmSound();
     };
-    toast.querySelector('.cal-toast-close').onclick = dismiss;
+    toast.querySelector('.cal-toast-close').onclick = () => dismiss(true);
+    if (options.snooze) {
+      const sb = toast.querySelector('.cal-toast-snooze');
+      if (sb) {
+        sb.onclick = () => {
+          dismiss(true);
+          // Clear "already notified" for this event so it can fire again after 5 min
+          if (options.snoozeNid) {
+            try {
+              const map = JSON.parse(localStorage.getItem('cal_notified') || '{}');
+              delete map[options.snoozeNid];
+              localStorage.setItem('cal_notified', JSON.stringify(map));
+            } catch (_) {}
+          }
+          // Re-check in 5 minutes (force)
+          setTimeout(() => checkUpcomingNotifications(true), 5 * 60 * 1000);
+          showInAppToast('Snoozed', 'Reminder in 5 minutes', 'var(--accent)');
+        };
+      }
+    }
     const stayMs = Math.max(3, Math.min(300, settings.toastDuration || 8)) * 1000;
-    setTimeout(dismiss, stayMs);
+    stayTimer = setTimeout(() => dismiss(true), stayMs);
   }
 
   function stopAlarmSound() {
@@ -2038,10 +2078,14 @@
   }
 
   async function showAppNotification(title, body, options = {}) {
-    // 1. Styled in-app toast — closing it stops the alarm
-    showInAppToast(title, body, options.accentColor, { stopAlarm: options.playSound !== false });
+    // 1. Styled in-app toast — closing stops alarm; optional snooze
+    showInAppToast(title, body, options.accentColor, {
+      stopAlarm: options.playSound !== false,
+      snooze: !!options.snooze,
+      snoozeNid: options.tag || options.snoozeNid
+    });
 
-    // 2. Alarm sound (respects mute + duration + repeat). Repeat only lengthens the sound; it does NOT re-show the popup.
+    // 2. Alarm sound (repeat only lengthens sound; does not re-show popup)
     if (options.playSound !== false) {
       playAlarmSound();
     }
@@ -2124,6 +2168,7 @@
       console.log('[Calendar] Firing TIME notification for:', title, body);
       showAppNotification(title, body, {
         tag: nid,
+        snooze: true,
         accentColor: n.categoryColor || 'var(--accent)',
         data: { date: todayStr, id: n.id }
       });
@@ -2830,7 +2875,14 @@
   });
 
   document.getElementById('settingsBtn').addEventListener('click', () => {
-    document.getElementById('settingsPanel').classList.toggle('open');
+    const panel = document.getElementById('settingsPanel');
+    panel.classList.toggle('open');
+    if (panel.classList.contains('open')) {
+      // Scroll so options are clearly visible (users often miss that they opened)
+      setTimeout(() => {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    }
   });
 
   /* SETUP TOGGLE SWITCHES */
@@ -2877,19 +2929,57 @@
   soundRepeatSlider.value = settings.soundRepeat ?? 1;
   soundRepeatVal.textContent = settings.soundRepeat ?? 1;
 
+  function isIOSDevice() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+
+  function notificationHelpMessage(perm) {
+    const isIOS = isIOSDevice();
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const secure = window.isSecureContext;
+
+    if (!('Notification' in window)) {
+      if (isIOS && !isStandalone) {
+        return 'On iPhone/iPad, open this app from your Home Screen (Add to Home Screen) to use notifications.\n\nSafari in a normal browser tab cannot show calendar notifications.';
+      }
+      return 'Notifications are not supported in this browser.';
+    }
+    if (!secure) {
+      return 'Notifications need a secure connection (HTTPS).\n\nOpen the app via your GitHub Pages HTTPS link, not plain HTTP.';
+    }
+    if (perm === 'denied') {
+      if (isIOS) {
+        return 'Notifications are blocked for this app.\n\nOn iPhone/iPad:\n1. Install to Home Screen (Share → Add to Home Screen)\n2. Open Settings → Notifications → find this app or Safari\n3. Allow Notifications\n4. Fully close and reopen the app\n\nNote: iOS 16.4+ is required for web app notifications.';
+      }
+      return 'Notifications are blocked for this site.\n\nTo fix on Android Chrome:\n1. Tap the lock / tune icon in the address bar\n2. Permissions → Notifications → Allow\n3. Or: Chrome menu → Settings → Site settings → Notifications\n4. Reload the page and turn Event Notifications on again\n\nOnce blocked, the browser will not ask again until you reset it.';
+    }
+    return 'Could not enable notifications (status: ' + perm + '). Try reloading and allowing when prompted.';
+  }
+
   notifyToggle.addEventListener('change', async e => {
     if (e.target.checked) {
       if (!('Notification' in window)) {
-        alert('Notifications are not supported in this browser.');
+        alert(notificationHelpMessage('unsupported'));
+        e.target.checked = false;
+        return;
+      }
+      if (!window.isSecureContext) {
+        alert(notificationHelpMessage('insecure'));
         e.target.checked = false;
         return;
       }
       let perm = Notification.permission;
+      // Only request when still "default" — browsers ignore repeat prompts after deny
       if (perm === 'default') {
-        perm = await Notification.requestPermission();
+        try {
+          perm = await Notification.requestPermission();
+        } catch (err) {
+          perm = Notification.permission;
+        }
       }
       if (perm !== 'granted') {
-        alert('Notification permission denied.\n\nPlease allow notifications for this site in your browser settings, then try again.');
+        alert(notificationHelpMessage(perm));
         e.target.checked = false;
         settings.notifyEnabled = false;
         notifyOptionsGroup.style.display = 'none';
@@ -3011,6 +3101,10 @@
           e.target.value = '';
           return;
         }
+        if (!confirm('Restore this backup?\n\nThis will replace your current marks, notes, themes and settings with the file contents.')) {
+          e.target.value = '';
+          return;
+        }
         // Full restore: replace each section that exists in the backup
         if (imported.marks !== undefined) marks = imported.marks && typeof imported.marks === 'object' ? imported.marks : {};
         if (imported.notes !== undefined) notes = imported.notes && typeof imported.notes === 'object' ? imported.notes : {};
@@ -3068,7 +3162,9 @@
       .replace(/;/g, '\\;')
       .replace(/,/g, '\\,')
       .replace(/\n/g, ' ');
+    const tzName = (Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC').replace(/[^a-zA-Z0-9/_+-]/g, '');
     let icsContent = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Simple Calendar//EN\r\nCALSCALE:GREGORIAN\r\n";
+    icsContent += `X-WR-TIMEZONE:${tzName}\r\n`;
     
     Object.keys(notes).forEach(dateStr => {
       (notes[dateStr] || []).forEach(n => {
@@ -3317,17 +3413,42 @@
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Compress down to JPEG format at 80% quality to avoid localStorage limits
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        // Compress to JPEG to limit localStorage use
+        let quality = 0.8;
+        let compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        // If still large, compress harder
+        while (compressedDataUrl.length > 400000 && quality > 0.45) {
+          quality -= 0.1;
+          compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        }
 
         const mk = monthKey(current);
+        const photoCount = Object.keys(monthPhotos).length + (monthPhotos[mk] ? 0 : 1);
+        if (photoCount > 12) {
+          if (!confirm('You already have many custom month photos stored.\n\nlocalStorage can fill up (usually ~5MB). Continue saving this photo?')) {
+            e.target.value = '';
+            return;
+          }
+        }
+        if (compressedDataUrl.length > 500000) {
+          if (!confirm('This photo is still large after compression and may use a lot of storage.\n\nSave it anyway?')) {
+            e.target.value = '';
+            return;
+          }
+        }
+
         monthPhotos[mk] = compressedDataUrl;
         settings.photoMode = 'custom';
         
         document.getElementById('monthPhoto').src = compressedDataUrl;
-        updatePhotoUI(); 
-        save(); 
+        updatePhotoUI();
+        try {
+          save();
+        } catch (_) {
+          alert('Could not save photo — storage may be full. Try removing older month photos.');
+        }
         loadMonthPhoto();
+        e.target.value = '';
       };
       img.src = event.target.result;
     };
