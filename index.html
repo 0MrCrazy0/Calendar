@@ -49,8 +49,15 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  html {
+    min-height: 100%;
+    min-height: 100dvh;
+    background: var(--bg);
+  }
+
   html, body {
-    height: 100%;
+    min-height: 100%;
+    min-height: 100dvh;
     background: var(--bg);
     color: var(--text);
     font-family: var(--font);
@@ -62,7 +69,11 @@
     justify-content: center;
     align-items: flex-start;
     padding: 12px;
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
     overflow-y: auto;
+    /* Grow with content so theme bg fills past the viewport when the list is long */
+    min-height: 100%;
+    min-height: 100dvh;
   }
 
   .app {
@@ -3294,7 +3305,6 @@
     const reqBtn = document.getElementById('requestNotifyBtn');
     if (!statusEl) return;
 
-    // Feature off → hide status/button
     if (!settings.notifyEnabled) {
       statusEl.style.display = 'none';
       statusEl.textContent = '';
@@ -3302,7 +3312,6 @@
       return;
     }
 
-    // Feature on + system permission granted → hide
     if (systemNotifyGranted()) {
       statusEl.style.display = 'none';
       statusEl.textContent = '';
@@ -3310,7 +3319,6 @@
       return;
     }
 
-    // Feature on, but system permission not fully available
     statusEl.style.display = 'block';
     statusEl.style.color = 'var(--muted)';
 
@@ -3334,7 +3342,6 @@
       statusEl.style.color = 'var(--mark)';
       if (reqBtn) reqBtn.style.display = 'block';
     } else {
-      // default — not asked yet or still pending
       statusEl.textContent = 'In-app alerts on. Tap Allow notifications for lock-screen / system alerts.';
       if (reqBtn) reqBtn.style.display = 'block';
     }
@@ -3382,13 +3389,11 @@
 
   notifyToggle.addEventListener('change', async e => {
     // In-app toasts + alarm always follow the switch (works without system permission).
-    // System Notification is optional — request it but never force the switch back off.
     settings.notifyEnabled = e.target.checked;
     notifyOptionsGroup.style.display = settings.notifyEnabled ? 'block' : 'none';
     save();
 
     if (settings.notifyEnabled) {
-      // Try system permission on the same user gesture (best chance on mobile)
       const ok = await requestNotificationPermission(false);
       updateNotifyPermUI();
       if (ok) {
