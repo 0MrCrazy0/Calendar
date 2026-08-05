@@ -3285,58 +3285,68 @@
     return 'Could not enable notifications (status: ' + perm + '). Try reloading and allowing when prompted.';
   }
 
+  function systemNotifyGranted() {
+    return ('Notification' in window) && window.isSecureContext && Notification.permission === 'granted';
+  }
+
   function updateNotifyPermUI() {
     const statusEl = document.getElementById('notifyPermStatus');
     const reqBtn = document.getElementById('requestNotifyBtn');
     if (!statusEl) return;
-    // Fully hide status + button when system permission is already granted
-    if ('Notification' in window && window.isSecureContext && Notification.permission === 'granted') {
+
+    // Feature off → hide status/button
+    if (!settings.notifyEnabled) {
       statusEl.style.display = 'none';
       statusEl.textContent = '';
       if (reqBtn) reqBtn.style.display = 'none';
       return;
     }
+
+    // Feature on + system permission granted → hide
+    if (systemNotifyGranted()) {
+      statusEl.style.display = 'none';
+      statusEl.textContent = '';
+      if (reqBtn) reqBtn.style.display = 'none';
+      return;
+    }
+
+    // Feature on, but system permission not fully available
     statusEl.style.display = 'block';
+    statusEl.style.color = 'var(--muted)';
+
     if (!('Notification' in window)) {
       statusEl.textContent = isIOSDevice()
-        ? 'System notifications need Home Screen install on iOS.'
-        : 'Notifications not supported in this browser.';
-      statusEl.style.color = 'var(--muted)';
+        ? 'In-app alerts on. System lock-screen alerts need Home Screen install (iOS 16.4+).'
+        : 'In-app alerts on. System notifications not supported in this browser.';
       if (reqBtn) reqBtn.style.display = 'none';
       return;
     }
     if (!window.isSecureContext) {
-      statusEl.textContent = 'Needs HTTPS for system notifications.';
+      statusEl.textContent = 'In-app alerts on. System notifications need HTTPS.';
       statusEl.style.color = 'var(--mark)';
       if (reqBtn) reqBtn.style.display = 'none';
       return;
     }
+
     const perm = Notification.permission;
     if (perm === 'denied') {
-      statusEl.textContent = 'System notifications blocked — use site settings to Allow (if you only see “Sound”, open Site settings → Notifications).';
+      statusEl.textContent = 'In-app alerts on. System notifications blocked — open Site settings → Notifications → Allow (if you only see “Sound”, open full Site settings).';
       statusEl.style.color = 'var(--mark)';
       if (reqBtn) reqBtn.style.display = 'block';
     } else {
-      // default — only show when user has turned the feature on
-      if (settings.notifyEnabled) {
-        statusEl.textContent = 'Permission not granted yet — turn the switch off/on or tap Allow notifications.';
-        statusEl.style.color = 'var(--muted)';
-        if (reqBtn) reqBtn.style.display = 'block';
-      } else {
-        statusEl.style.display = 'none';
-        statusEl.textContent = '';
-        if (reqBtn) reqBtn.style.display = 'none';
-      }
+      // default — not asked yet or still pending
+      statusEl.textContent = 'In-app alerts on. Tap Allow notifications for lock-screen / system alerts.';
+      if (reqBtn) reqBtn.style.display = 'block';
     }
   }
 
-  async function requestNotificationPermission() {
+  async function requestNotificationPermission(showAlertOnFail) {
     if (!('Notification' in window)) {
-      alert(notificationHelpMessage('unsupported'));
+      if (showAlertOnFail) alert(notificationHelpMessage('unsupported'));
       return false;
     }
     if (!window.isSecureContext) {
-      alert(notificationHelpMessage('insecure'));
+      if (showAlertOnFail) alert(notificationHelpMessage('insecure'));
       return false;
     }
     let perm = Notification.permission;
@@ -3349,7 +3359,7 @@
     }
     updateNotifyPermUI();
     if (perm !== 'granted') {
-      alert(notificationHelpMessage(perm));
+      if (showAlertOnFail) alert(notificationHelpMessage(perm));
       return false;
     }
     return true;
@@ -3358,36 +3368,37 @@
   const requestNotifyBtn = document.getElementById('requestNotifyBtn');
   if (requestNotifyBtn) {
     requestNotifyBtn.addEventListener('click', async () => {
-      const ok = await requestNotificationPermission();
+      const ok = await requestNotificationPermission(true);
       if (ok) {
         settings.notifyEnabled = true;
         notifyToggle.checked = true;
         notifyOptionsGroup.style.display = 'block';
         save();
         setTimeout(() => checkUpcomingNotifications(true), 300);
-        showInAppToast('Notifications on', 'System alerts allowed', 'var(--today)');
+        showInAppToast('System notifications on', 'Lock-screen alerts allowed', 'var(--today)');
       }
     });
   }
 
   notifyToggle.addEventListener('change', async e => {
-    if (e.target.checked) {
-      const ok = await requestNotificationPermission();
-      if (!ok) {
-        e.target.checked = false;
-        settings.notifyEnabled = false;
-        notifyOptionsGroup.style.display = 'none';
-        save();
-        updateNotifyPermUI();
-        return;
-      }
-    }
+    // In-app toasts + alarm always follow the switch (works without system permission).
+    // System Notification is optional — request it but never force the switch back off.
     settings.notifyEnabled = e.target.checked;
     notifyOptionsGroup.style.display = settings.notifyEnabled ? 'block' : 'none';
     save();
-    updateNotifyPermUI();
+
     if (settings.notifyEnabled) {
+      // Try system permission on the same user gesture (best chance on mobile)
+      const ok = await requestNotificationPermission(false);
+      updateNotifyPermUI();
+      if (ok) {
+        showInAppToast('Notifications on', 'In-app + system alerts enabled', 'var(--today)');
+      } else {
+        showInAppToast('In-app alerts on', 'System alerts need permission — tap Allow notifications if shown', 'var(--accent)');
+      }
       setTimeout(() => checkUpcomingNotifications(true), 300);
+    } else {
+      updateNotifyPermUI();
     }
   });
 
