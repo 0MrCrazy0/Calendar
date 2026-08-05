@@ -1,5 +1,5 @@
 {
-  "name": "Desktop Calendar",
+  "name": "Simple Calendar",
   "short_name": "Calendar",
   "start_url": "./index.html",
   "display": "standalone",
