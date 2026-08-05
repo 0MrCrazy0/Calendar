@@ -2127,16 +2127,12 @@
       if (sb) {
         sb.onclick = () => {
           dismiss(true);
-          // Clear "already notified" for this event so it can fire again after 5 min
-          if (options.snoozeNid) {
-            try {
-              const map = JSON.parse(localStorage.getItem('cal_notified') || '{}');
-              delete map[options.snoozeNid];
-              localStorage.setItem('cal_notified', JSON.stringify(map));
-            } catch (_) {}
-          }
-          // Re-check in 5 minutes (force)
-          setTimeout(() => checkUpcomingNotifications(true), 5 * 60 * 1000);
+          scheduleSnooze({
+            id: options.snoozeNid || ('snooze-' + Date.now()),
+            title: title,
+            body: body,
+            accentColor: accentColor || 'var(--accent)'
+          });
           showInAppToast('Snoozed', 'Reminder in 5 minutes', 'var(--accent)');
         };
       }
@@ -2172,7 +2168,7 @@
       const gain = alarmCtx.createGain();
       osc.type = 'square';
       osc.frequency.value = 880;
-      gain.gain.value = Math.max(0.01, Math.min(1, vol)) * 0.25;
+      gain.gain.value = Math.max(0.01, Math.min(1, vol)) * 0.4;
       osc.connect(gain);
       gain.connect(alarmCtx.destination);
       osc.start();
@@ -2181,7 +2177,7 @@
       const pulse = setInterval(() => {
         if (!alarmOsc) { clearInterval(pulse); return; }
         on = !on;
-        try { gain.gain.value = on ? Math.max(0.01, Math.min(1, vol)) * 0.25 : 0.001; } catch (_) {}
+        try { gain.gain.value = on ? Math.max(0.01, Math.min(1, vol)) * 0.4 : 0.001; } catch (_) {}
       }, 400);
       alarmOsc = osc;
       alarmGain = gain;
@@ -2200,29 +2196,67 @@
     const oneShot = Math.max(1, Math.min(60, settings.soundDuration || 5));
     const times = Math.max(1, Math.min(5, settings.soundRepeat || 1));
     const totalSecs = Math.min(300, oneShot * times);
+    // Built-in only — no remote URL (avoids double sound + works offline)
+    playLocalBeep(vol, totalSecs);
+  }
 
-    const useLocal = () => playLocalBeep(vol, totalSecs);
+  /* ── Snooze: fire a dedicated reminder in 5 minutes (does not depend on event time window) ── */
+  const SNOOZE_MS = 5 * 60 * 1000;
+  let snoozeTimers = {}; // id → timeout handle
 
-    if (!navigator.onLine) {
-      useLocal();
-      return;
-    }
+  function loadPendingSnoozes() {
     try {
-      alarmAudio = new Audio('https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg');
-      alarmAudio.loop = true;
-      alarmAudio.volume = vol;
-      const playPromise = alarmAudio.play();
-      if (playPromise && playPromise.catch) {
-        playPromise.catch(err => {
-          console.warn('[Calendar] Alarm play blocked:', err.message);
-          useLocal();
-        });
-      }
-      alarmStopTimer = setTimeout(stopAlarmSound, totalSecs * 1000);
-    } catch (err) {
-      console.warn('[Calendar] Alarm sound error:', err);
-      useLocal();
-    }
+      const arr = JSON.parse(localStorage.getItem('cal_snoozes') || '[]');
+      return Array.isArray(arr) ? arr : [];
+    } catch (_) { return []; }
+  }
+
+  function savePendingSnoozes(list) {
+    try { localStorage.setItem('cal_snoozes', JSON.stringify(list)); } catch (_) {}
+  }
+
+  function scheduleSnooze(item) {
+    const id = String(item.id || ('snooze-' + Date.now()));
+    const fireAt = Date.now() + SNOOZE_MS;
+    let list = loadPendingSnoozes().filter(s => s.id !== id);
+    list.push({
+      id,
+      title: item.title || 'Reminder',
+      body: item.body || 'Snoozed event',
+      accentColor: item.accentColor || 'var(--accent)',
+      fireAt
+    });
+    savePendingSnoozes(list);
+
+    if (snoozeTimers[id]) clearTimeout(snoozeTimers[id]);
+    const delay = Math.max(1000, fireAt - Date.now());
+    snoozeTimers[id] = setTimeout(() => fireDueSnoozes(true), delay);
+  }
+
+  function fireDueSnoozes(fromTimer) {
+    if (!settings.notifyEnabled && !fromTimer) return;
+    const now = Date.now();
+    let list = loadPendingSnoozes();
+    if (!list.length) return;
+    const due = list.filter(s => s.fireAt <= now);
+    const rest = list.filter(s => s.fireAt > now);
+    savePendingSnoozes(rest);
+    due.forEach(s => {
+      if (snoozeTimers[s.id]) { clearTimeout(snoozeTimers[s.id]); delete snoozeTimers[s.id]; }
+      showAppNotification(s.title, s.body + ' (snoozed)', {
+        tag: 'snooze-' + s.id + '-' + now,
+        snooze: true,
+        snoozeNid: s.id,
+        accentColor: s.accentColor || 'var(--accent)',
+        playSound: true
+      });
+    });
+    // Re-arm timers for remaining snoozes (e.g. after page reload)
+    rest.forEach(s => {
+      if (snoozeTimers[s.id]) return;
+      const delay = Math.max(1000, s.fireAt - Date.now());
+      snoozeTimers[s.id] = setTimeout(() => fireDueSnoozes(true), delay);
+    });
   }
 
   async function showAppNotification(title, body, options = {}) {
@@ -2276,6 +2310,9 @@
   }
 
   function checkUpcomingNotifications(force) {
+    // Always process due snoozes (independent of the event time window)
+    fireDueSnoozes(false);
+
     if (!settings.notifyEnabled) return;
     const now = new Date();
     const currentMin = now.getHours() * 60 + now.getMinutes();
@@ -3965,7 +4002,10 @@
   startSmoothClock();
   render();
   // Initial notification check (after a short delay so UI is ready)
-  setTimeout(checkUpcomingNotifications, 2500);
+  setTimeout(() => {
+    fireDueSnoozes(true); // re-arm any pending snoozes after reload
+    checkUpcomingNotifications(true);
+  }, 2500);
 </script>
 </body>
 </html>
