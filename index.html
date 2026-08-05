@@ -265,20 +265,26 @@
 
   .days {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 0;
-    background: transparent;
-    border: 1px solid var(--day-border);
+    background: var(--day-bg);
+    /* Top/left only — right/bottom come from each cell so every line is exactly 1px */
+    border-top: 1px solid var(--day-border);
+    border-left: 1px solid var(--day-border);
+    border-right: none;
+    border-bottom: none;
     margin: 0 10px 8px;
     border-radius: 8px;
     overflow: hidden;
     touch-action: pan-y;
+    transform: translateZ(0);
   }
 
   .day {
     aspect-ratio: 1;
-    height: 100%;
-    max-height: 58px;
+    height: auto;
+    max-height: none;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -293,8 +299,8 @@
     font-weight: 500;
     overflow: hidden;
     box-sizing: border-box;
-    /* Thin grid lines that stay even when the app is scaled */
-    box-shadow: inset -1px 0 0 var(--day-border), inset 0 -1px 0 var(--day-border);
+    border-right: 1px solid var(--day-border);
+    border-bottom: 1px solid var(--day-border);
   }
 
   .day:hover {
@@ -935,8 +941,8 @@
     display: none;
   }
 
-  /* MOBILE PWA FULL-BLEED STYLING */
-  @media (max-width: 600px) {
+  /* Full-bleed only on real phones (touch), NOT when a desktop window is merely resized narrow */
+  @media (max-width: 600px) and (hover: none) and (pointer: coarse) {
     body {
       padding: 0;
       background: var(--card);
@@ -955,6 +961,17 @@
     .picture-canvas-container {
       height: 180px;
       padding-top: env(safe-area-inset-top);
+    }
+  }
+
+  /* Narrow desktop / resized PWA window: keep padding + card shape so grid doesn't stretch to the edges */
+  @media (max-width: 600px) and (hover: hover) {
+    body {
+      padding: 10px;
+    }
+    .app {
+      max-width: 100%;
+      border-radius: 16px;
     }
   }
 
