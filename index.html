@@ -66,24 +66,17 @@
   }
 
   .app {
+    /* Fixed design width — scale is applied in JS so the grid stays consistent */
     width: 100%;
-    max-width: 440px;
+    max-width: 400px;
     background: var(--card);
     border-radius: 20px;
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.09);
     overflow: hidden;
-    margin-bottom: 30px;
-    transform: scale(var(--scale));
+    margin-bottom: 24px;
+    /* zoom set via JS (Chrome/Edge/PWA). Transform fallback for others. */
     transform-origin: top center;
-    transition: transform 0.2s ease, zoom 0.2s ease;
-  }
-  /* Chrome / Edge / PWA: zoom keeps 1px lines sharp (better than transform scale) */
-  @supports (zoom: 1) {
-    .app {
-      transform: none;
-      zoom: var(--scale);
-    }
   }
 
   /* PHOTO & HEADER LAYOUT */
@@ -1330,7 +1323,7 @@
       <h3 data-i18n="lblUiScale">UI Scale</h3>
       <div class="slider-group">
         <label for="scaleSlider"><span data-i18n="lblZoom">Zoom</span><span id="scaleVal">100%</span></label>
-        <input type="range" id="scaleSlider" min="70" max="140" value="100">
+        <input type="range" id="scaleSlider" min="70" max="150" value="100">
       </div>
 
       <h3 data-i18n="lblPhotoSettings">Month Photo Settings</h3>
@@ -1856,11 +1849,53 @@
     if (markPicker) markPicker.value = tTheme.mark;
   }
 
+  // Design width of the calendar card (px). Scale grows/shrinks from this.
+  const APP_BASE_WIDTH = 400;
+
   function applyScale(){
-    const s = settings.scale || 100;
-    document.documentElement.style.setProperty('--scale', s/100);
-    document.getElementById('scaleSlider').value = s;
-    document.getElementById('scaleVal').textContent = s + '%';
+    let requested = Math.round(settings.scale || 100);
+    requested = Math.max(70, Math.min(150, requested));
+
+    const app = document.querySelector('.app');
+    const slider = document.getElementById('scaleSlider');
+    const label = document.getElementById('scaleVal');
+
+    // How large can we go without overflowing the window horizontally?
+    const pad = 20; // body padding allowance
+    const available = Math.max(280, window.innerWidth - pad);
+    const maxScaleByViewport = Math.floor((available / APP_BASE_WIDTH) * 100);
+    // Never force smaller than 70; clamp high scale so buttons aren't cut off
+    const applied = Math.min(requested, Math.max(70, maxScaleByViewport));
+    const factor = applied / 100;
+
+    document.documentElement.style.setProperty('--scale', factor);
+
+    if (app) {
+      app.style.maxWidth = APP_BASE_WIDTH + 'px';
+      app.style.width = '100%';
+      // Prefer zoom (keeps layout + grid lines sharp in Chromium / installed PWA)
+      if (typeof CSS !== 'undefined' && CSS.supports && CSS.supports('zoom', '1')) {
+        app.style.zoom = factor;
+        app.style.transform = 'none';
+        app.style.marginBottom = '24px';
+      } else {
+        // Firefox etc.: transform scale + extra bottom space so content isn't clipped
+        app.style.zoom = '';
+        app.style.transform = 'scale(' + factor + ')';
+        app.style.marginBottom = Math.max(24, Math.round(24 + (factor - 1) * 640)) + 'px';
+      }
+    }
+
+    if (slider) slider.value = requested;
+    if (label) {
+      label.textContent = applied < requested
+        ? applied + '% (fits screen)'
+        : applied + '%';
+    }
+
+    // Allow vertical scroll if the scaled app is taller than the window
+    document.body.style.overflowX = 'hidden';
+    document.body.style.overflowY = 'auto';
   }
 
   function loadMonthPhoto(){
@@ -3202,6 +3237,13 @@
   document.getElementById('scaleSlider').addEventListener('input', e => {
     settings.scale = +e.target.value;
     applyScale(); save();
+  });
+
+  // Re-clamp scale when the window / PWA frame is resized so nothing is cut off
+  let scaleResizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(scaleResizeTimer);
+    scaleResizeTimer = setTimeout(applyScale, 100);
   });
 
   document.getElementById('resetTheme').addEventListener('click', () => {
