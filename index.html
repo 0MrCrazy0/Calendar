@@ -1200,7 +1200,7 @@
 
     <!-- Global & Date Search Bar -->
     <div class="search-bar">
-      <input id="searchBox" type="text" placeholder="🔍 Search notes, emojis or date...">
+      <input id="searchBox" type="text" placeholder="🔍 Search or date…">
       <button id="searchBtn" data-i18n="searchBtn">Search</button>
       <button id="todayBtn" title="Return to current day">📍 Today</button>
     </div>
@@ -1331,6 +1331,10 @@
           <label for="toastDurationSlider"><span data-i18n="lblToastDuration">Popup stays (seconds)</span><span id="toastDurationVal">8</span></label>
           <input type="range" id="toastDurationSlider" min="3" max="300" value="8">
         </div>
+        <div class="slider-group">
+          <label for="snoozeSlider"><span data-i18n="lblSnoozeMins">Snooze (minutes)</span><span id="snoozeVal">5</span></label>
+          <input type="range" id="snoozeSlider" min="1" max="60" value="5">
+        </div>
         <div class="toggle-row" style="gap:8px;">
           <span data-i18n="lblNotifySound" style="flex:1;">Alarm sound</span>
           <button type="button" id="stopAlarmBtn" data-i18n="btnStopAlarm" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:var(--text);border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;white-space:nowrap;">⏹ Stop</button>
@@ -1348,7 +1352,7 @@
           <input type="range" id="soundRepeatSlider" min="1" max="5" value="1">
         </div>
         <div class="slider-group" id="soundVolumeGroup">
-          <label for="soundVolumeSlider"><span data-i18n="lblSoundVolume">Alarm volume</span><span id="soundVolumeVal">85</span>%</label>
+          <label for="soundVolumeSlider"><span data-i18n="lblSoundVolume">Alarm volume</span><span id="soundVolumeVal">85%</span></label>
           <input type="range" id="soundVolumeSlider" min="0" max="100" value="85">
         </div>
         <div id="notifyPermStatus" style="font-size:11px;color:var(--muted);margin:6px 0 4px;line-height:1.4;"></div>
@@ -1505,6 +1509,7 @@
       notifyEnabled: false,
       notifyDaysAhead: 1,
       toastDuration: 8,
+      snoozeMinutes: 5,
       soundEnabled: true,
       soundDuration: 5,
       soundRepeat: 1,
@@ -1546,12 +1551,14 @@
 
     setVal('toastDurationSlider', settings.toastDuration ?? 8);
     setText('toastDurationVal', settings.toastDuration ?? 8);
+    setVal('snoozeSlider', settings.snoozeMinutes ?? 5);
+    setText('snoozeVal', settings.snoozeMinutes ?? 5);
     setVal('soundDurationSlider', settings.soundDuration ?? 5);
     setText('soundDurationVal', settings.soundDuration ?? 5);
     setVal('soundRepeatSlider', settings.soundRepeat ?? 1);
     setText('soundRepeatVal', settings.soundRepeat ?? 1);
     setVal('soundVolumeSlider', settings.soundVolume ?? 85);
-    setText('soundVolumeVal', settings.soundVolume ?? 85);
+    setText('soundVolumeVal', (settings.soundVolume ?? 85) + '%');
 
     setVal('languageSelect', settings.language || 'en');
     setVal('scaleSlider', settings.scale !== undefined && settings.scale !== null ? settings.scale : 100);
@@ -1576,7 +1583,9 @@
   /* MULTI-LANGUAGE DICTIONARIES */
   const i18n = {
     en: {
-      searchPlaceholder: "🔍 Search notes, emojis or date...",
+      searchPlaceholder: "🔍 Search or date…",
+      lblSnoozeMins: "Snooze (minutes)",
+      goToDate: "Go to this day",
       searchBtn: "Search",
       todayBtn: "📍 Today",
       weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
@@ -1689,7 +1698,9 @@
       repeatsYearly: "Repeats every year"
     },
     tl: {
-      searchPlaceholder: "🔍 Maghanap ng mga tala, emoji o petsa...",
+      searchPlaceholder: "🔍 Maghanap / petsa…",
+      lblSnoozeMins: "Snooze (minuto)",
+      goToDate: "Pumunta sa araw na ito",
       searchBtn: "Hanapin",
       todayBtn: "📍 Ngayon",
       weekdays: ["Lin", "Lun", "Mar", "Miy", "Huw", "Biy", "Sab"],
@@ -1802,7 +1813,9 @@
       repeatsYearly: "Ulitin bawat taon"
     },
     no: {
-      searchPlaceholder: "🔍 Søk etter notater, emojier eller dato...",
+      searchPlaceholder: "🔍 Søk / dato…",
+      lblSnoozeMins: "Snooze (minutter)",
+      goToDate: "Gå til denne dagen",
       searchBtn: "Søk",
       todayBtn: "📍 I dag",
       weekdays: ["Søn", "Man", "Tir", "Ons", "Tor", "Fre", "Lør"],
@@ -2260,7 +2273,7 @@
     toast.id = 'calToast';
     if (options.stopAlarm) toast.dataset.stopAlarm = '1';
     const snoozeBtn = options.snooze
-      ? `<button type="button" class="cal-toast-snooze" title="Remind again in 5 minutes">Snooze 5m</button>`
+      ? `<button type="button" class="cal-toast-snooze" title="Remind again in ${Math.max(1, Math.min(60, settings.snoozeMinutes ?? 5))} minute(s)">Snooze ${Math.max(1, Math.min(60, settings.snoozeMinutes ?? 5))}m</button>`
       : '';
     toast.innerHTML = `
       <div class="cal-toast-accent" style="background:${accentColor || 'var(--accent)'}"></div>
@@ -2296,7 +2309,8 @@
             body: body,
             accentColor: accentColor || 'var(--accent)'
           });
-          showInAppToast('Snoozed', 'Reminder in 5 minutes', 'var(--accent)');
+          const _sm = Math.max(1, Math.min(60, settings.snoozeMinutes ?? 5));
+          showInAppToast('Snoozed', 'Reminder in ' + _sm + ' minute' + (_sm === 1 ? '' : 's'), 'var(--accent)');
         };
       }
     }
@@ -2364,7 +2378,9 @@
   }
 
   /* ── Snooze: fire a dedicated reminder in 5 minutes (does not depend on event time window) ── */
-  const SNOOZE_MS = 5 * 60 * 1000;
+  function getSnoozeMs() {
+    return Math.max(1, Math.min(60, settings.snoozeMinutes ?? 5)) * 60 * 1000;
+  }
   let snoozeTimers = {}; // id → timeout handle
 
   function loadPendingSnoozes() {
@@ -2380,7 +2396,7 @@
 
   function scheduleSnooze(item) {
     const id = String(item.id || ('snooze-' + Date.now()));
-    const fireAt = Date.now() + SNOOZE_MS;
+    const fireAt = Date.now() + getSnoozeMs();
     let list = loadPendingSnoozes().filter(s => s.id !== id);
     list.push({
       id,
@@ -3103,28 +3119,135 @@
     render();
   }
 
+  // Prefer the next upcoming calendar day (today counts as upcoming).
+  function nextUpcomingDate(month1to12, day) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let y = today.getFullYear();
+    let d = new Date(y, month1to12 - 1, day);
+    d.setHours(0, 0, 0, 0);
+    // Invalid day for month (e.g. 31/02) — Date rolls over; reject
+    if (d.getMonth() !== month1to12 - 1) return null;
+    if (d < today) {
+      d = new Date(y + 1, month1to12 - 1, day);
+      d.setHours(0, 0, 0, 0);
+      if (d.getMonth() !== month1to12 - 1) return null;
+    }
+    return d;
+  }
+
+  function parseSearchDate(raw) {
+    const q = String(raw || '').trim();
+    if (!q) return null;
+    let m = q.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (m) {
+      const y = +m[1], mo = +m[2], d = +m[3];
+      if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+        const dt = new Date(y, mo - 1, d);
+        if (dt.getMonth() === mo - 1) return dt;
+      }
+    }
+    // DD/MM/YYYY (AU/PH/NO style)
+    m = q.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+    if (m) {
+      const d = +m[1], mo = +m[2], y = +m[3];
+      if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+        const dt = new Date(y, mo - 1, d);
+        if (dt.getMonth() === mo - 1) return dt;
+      }
+    }
+    // DD/MM → next upcoming (this year if still ahead, else next year)
+    m = q.match(/^(\d{1,2})[\/\-.](\d{1,2})$/);
+    if (m) {
+      const d = +m[1], mo = +m[2];
+      if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) return nextUpcomingDate(mo, d);
+    }
+    // Day only → next upcoming in current viewed month, else next month that has that day
+    m = q.match(/^(\d{1,2})$/);
+    if (m) {
+      const d = +m[1];
+      if (d < 1 || d > 31) return null;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      let y = current.getFullYear(), mo = current.getMonth();
+      let dt = new Date(y, mo, d);
+      if (dt.getMonth() === mo) {
+        dt.setHours(0, 0, 0, 0);
+        if (dt >= today) return dt;
+      }
+      // try next months until we find a valid upcoming day
+      for (let i = 1; i <= 24; i++) {
+        const tryDate = new Date(y, mo + i, d);
+        if (tryDate.getDate() !== d) continue;
+        tryDate.setHours(0, 0, 0, 0);
+        if (tryDate >= today) return tryDate;
+      }
+      return null;
+    }
+    return null;
+  }
+
+  function jumpToSearchDate(dateObj) {
+    if (!dateObj || isNaN(dateObj.getTime())) return;
+    selected = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+    current = new Date(dateObj.getFullYear(), dateObj.getMonth(), 1);
+    document.getElementById('searchResults').innerHTML = '';
+    document.getElementById('searchBox').value = '';
+    render();
+  }
+
+  function noteMatchesQuery(n, query) {
+    const plain = String(n.text || '').replace(/<[^>]+>/g, '').toLowerCase();
+    const time = String(n.time || '').toLowerCase();
+    const timeDisp = n.time ? formatDisplayTime(n.time).toLowerCase() : '';
+    const emoji = n.emoji || '';
+    const cat = customCategories.find(c => c.id === n.categoryId) ||
+      customCategories.find(c => c.color === n.categoryColor);
+    const catName = cat ? cat.name.toLowerCase() : '';
+    return plain.includes(query) ||
+      emoji.includes(query) ||
+      time.includes(query) ||
+      timeDisp.includes(query) ||
+      catName.includes(query);
+  }
+
   function executeSearch(){
-    const query = document.getElementById('searchBox').value.toLowerCase().trim();
+    const raw = document.getElementById('searchBox').value.trim();
+    const query = raw.toLowerCase();
     const resultsContainer = document.getElementById('searchResults');
     resultsContainer.innerHTML = '';
     if (!query) return;
 
+    // Pure date-like queries jump (or offer go-to)
+    const looksLikeDate = /^\d{4}-\d{1,2}-\d{1,2}$/.test(raw) ||
+      /^\d{1,2}[\/\-.]\d{1,2}([\/\-.]\d{4})?$/.test(raw) ||
+      /^\d{1,2}$/.test(raw);
+    const jumpDate = looksLikeDate ? parseSearchDate(raw) : null;
+
+    if (jumpDate) {
+      const item = document.createElement('div');
+      item.className = 'search-item';
+      const dateLabel = getLocalizedDateString(jumpDate, {weekday:'short', month:'short', day:'numeric', year:'numeric'});
+      item.innerHTML = '<span><strong>📅 ' + escapeHtml(dateLabel) + '</strong> — ' + escapeHtml(t('goToDate') || 'Go to this day') + '</span>';
+      item.addEventListener('click', () => jumpToSearchDate(jumpDate));
+      resultsContainer.appendChild(item);
+      // Full dates and DD/MM always jump immediately for seamless planning
+      if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(raw) || /^\d{1,2}[\/\-.]\d{1,2}([\/\-.]\d{4})?$/.test(raw)) {
+        jumpToSearchDate(jumpDate);
+        return;
+      }
+    }
+
     const matches = [];
 
     Object.keys(notes).forEach(dateStr => {
-      notes[dateStr].forEach(n => {
-        const cat = customCategories.find(c => c.id === n.categoryId) ||
-          customCategories.find(c => c.color === n.categoryColor);
-        const catName = cat ? cat.name : '';
-        if (dateStr.includes(query) || (n.text || '').toLowerCase().includes(query) ||
-            (n.emoji && n.emoji.includes(query)) ||
-            (catName && catName.toLowerCase().includes(query))) {
+      (notes[dateStr] || []).forEach(n => {
+        if (dateStr.includes(query) || noteMatchesQuery(n, query)) {
           matches.push({ date: new Date(dateStr + 'T00:00:00'), text: n.text, emoji: n.emoji || '' });
         }
       });
     });
 
-    // Marked days
     Object.keys(marks).forEach(dateStr => {
       if (dateStr.includes(query) || query === 'mark' || query === 'marked') {
         matches.push({ date: new Date(dateStr + 'T00:00:00'), text: '📌 Marked day', emoji: '📌' });
@@ -3132,31 +3255,36 @@
     });
 
     recurring.forEach(r => {
-      const cat = customCategories.find(c => c.id === r.categoryId) ||
-        customCategories.find(c => c.color === r.categoryColor);
-      const catName = cat ? cat.name : '';
-      if ((r.text || '').toLowerCase().includes(query) || (r.emoji && r.emoji.includes(query)) ||
-          (catName && catName.toLowerCase().includes(query))) {
+      if (noteMatchesQuery(r, query)) {
         let matchDate = new Date(current.getFullYear(), (r.month || 1) - 1, r.day || 1);
         if (r.startDate) {
           matchDate = (typeof r.startDate === 'string' && !r.startDate.includes('T'))
             ? new Date(r.startDate + 'T12:00:00')
             : new Date(r.startDate);
         }
-        matches.push({ date: matchDate, text: r.text + ` (${r.repeat || 'recurring'})`, emoji: r.emoji || '' });
+        // Prefer next upcoming occurrence for yearly-style display
+        if (r.repeat === 'yearly' && r.month && r.day) {
+          const up = nextUpcomingDate(+r.month, +r.day);
+          if (up) matchDate = up;
+        }
+        matches.push({ date: matchDate, text: r.text + ' (' + (r.repeat || 'recurring') + ')', emoji: r.emoji || '' });
       }
     });
 
-    if (matches.length === 0) {
-      resultsContainer.innerHTML = `<div class="search-item">${escapeHtml(t('noMatches'))}</div>`;
+    // Sort: sooner dates first
+    matches.sort((a, b) => a.date - b.date);
+
+    if (matches.length === 0 && !jumpDate) {
+      resultsContainer.innerHTML = '<div class="search-item">' + escapeHtml(t('noMatches')) + '</div>';
       return;
     }
 
-    matches.slice(0, 8).forEach(m => {
+    matches.slice(0, 10).forEach(m => {
       const item = document.createElement('div');
       item.className = 'search-item';
       const dateLabel = getLocalizedDateString(m.date, {month:'short', day:'numeric', year:'numeric'});
-      item.innerHTML = `<span><strong>${escapeHtml(dateLabel)}</strong>: ${escapeHtml(m.emoji)} ${escapeHtml(m.text)}</span>`;
+      const plain = String(m.text || '').replace(/<[^>]+>/g, '');
+      item.innerHTML = '<span><strong>' + escapeHtml(dateLabel) + '</strong>: ' + escapeHtml(m.emoji) + ' ' + escapeHtml(plain) + '</span>';
       item.addEventListener('click', () => {
         selected = new Date(m.date);
         current = new Date(m.date.getFullYear(), m.date.getMonth(), 1);
@@ -3651,6 +3779,15 @@
     toastDurationVal.textContent = settings.toastDuration;
     save();
   });
+  const snoozeSlider = document.getElementById('snoozeSlider');
+  const snoozeValEl = document.getElementById('snoozeVal');
+  if (snoozeSlider) {
+    snoozeSlider.addEventListener('input', e => {
+      settings.snoozeMinutes = +e.target.value;
+      if (snoozeValEl) snoozeValEl.textContent = settings.snoozeMinutes;
+      save();
+    });
+  }
   soundToggle.addEventListener('change', e => {
     settings.soundEnabled = e.target.checked;
     soundDurationGroup.style.display = settings.soundEnabled ? 'block' : 'none';
@@ -3672,7 +3809,7 @@
   if (soundVolumeSlider) {
     soundVolumeSlider.addEventListener('input', e => {
       settings.soundVolume = +e.target.value;
-      if (soundVolumeVal) soundVolumeVal.textContent = settings.soundVolume;
+      if (soundVolumeVal) soundVolumeVal.textContent = settings.soundVolume + '%';
       if (alarmAudio) {
         try { alarmAudio.volume = Math.max(0, Math.min(100, settings.soundVolume)) / 100; } catch (_) {}
       }
