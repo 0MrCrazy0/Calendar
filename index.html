@@ -1432,6 +1432,8 @@
       </div>
       <button class="upload-month-btn" id="uploadMonthBtn" data-i18n="btnUploadPhoto">📷 Upload Custom Photo</button>
       <button class="upload-month-btn" id="removeCustomPhotoBtn" style="display:none; border-color:var(--mark); color:var(--mark);" data-i18n="btnRemovePhoto">🗑️ Remove Custom Photo</button>
+      <button class="upload-month-btn" id="clearPrevYearPhotosBtn" style="border-color:rgba(255,255,255,0.2);color:var(--muted);margin-top:6px;" data-i18n="btnClearPrevYearPhotos">🧹 Clear previous years' photos</button>
+      <button class="upload-month-btn" id="clearAllPhotosBtn" style="border-color:var(--mark);color:var(--mark);margin-top:4px;" data-i18n="btnClearAllPhotos">🗑️ Clear all custom photos</button>
       <input type="file" id="monthPhotoInput" accept="image/*">
 
       <button class="install-btn" id="installBtn" data-i18n="btnInstall">Install as App</button>
@@ -1640,6 +1642,13 @@
       lblInterval: "Change interval",
       btnUploadPhoto: "📷 Upload Custom Photo",
       btnRemovePhoto: "🗑️ Remove Custom Photo",
+      btnClearPrevYearPhotos: "🧹 Clear previous years' photos",
+      btnClearAllPhotos: "🗑️ Clear all custom photos",
+      confirmClearPrevYearPhotos: "Remove custom photos from previous years?\n\nPhotos for the current year will be kept.",
+      confirmClearAllPhotos: "Remove ALL custom month photos?\n\nThis cannot be undone (unless you restore a backup).",
+      clearedPrevYearPhotos: "Previous years' photos cleared.",
+      clearedAllPhotos: "All custom photos cleared.",
+      noPhotosToClear: "No custom photos to clear.",
       btnInstall: "Install as App",
       btnReset: "Reset All Styles",
       noMatches: "No matching dates or notes found.",
@@ -1738,6 +1747,13 @@
       lblInterval: "Baguhin ang agwat",
       btnUploadPhoto: "📷 Mag-upload ng Sariling Larawan",
       btnRemovePhoto: "🗑️ Alisin ang Sariling Larawan",
+      btnClearPrevYearPhotos: "🧹 Alisin ang larawan mula sa nakaraang taon",
+      btnClearAllPhotos: "🗑️ Alisin ang lahat ng larawan",
+      confirmClearPrevYearPhotos: "Alisin ang mga larawan mula sa nakaraang taon?\n\nMananatili ang larawan para sa kasalukuyang taon.",
+      confirmClearAllPhotos: "Alisin ang LAHAT ng custom na larawan?\n\nHindi na ito mababawi (maliban kung mag-restore ng backup).",
+      clearedPrevYearPhotos: "Naalis ang mga larawan mula sa nakaraang taon.",
+      clearedAllPhotos: "Naalis ang lahat ng custom na larawan.",
+      noPhotosToClear: "Walang custom na larawan na aalisin.",
       btnInstall: "I-install Bilang App",
       btnReset: "I-reset ang Lahat ng Estilo",
       noMatches: "Walang nakitang tumutugmang petsa o tala.",
@@ -1836,6 +1852,13 @@
       lblInterval: "Endringsintervall",
       btnUploadPhoto: "📷 Last opp egendefinert bilde",
       btnRemovePhoto: "🗑️ Fjern egendefinert bilde",
+      btnClearPrevYearPhotos: "🧹 Fjern bilder fra tidligere år",
+      btnClearAllPhotos: "🗑️ Fjern alle egendefinerte bilder",
+      confirmClearPrevYearPhotos: "Fjerne egendefinerte bilder fra tidligere år?\n\nBilder for inneværende år beholdes.",
+      confirmClearAllPhotos: "Fjerne ALLE egendefinerte månedsbilder?\n\nDette kan ikke angres (med mindre du gjenoppretter en sikkerhetskopi).",
+      clearedPrevYearPhotos: "Bilder fra tidligere år er fjernet.",
+      clearedAllPhotos: "Alle egendefinerte bilder er fjernet.",
+      noPhotosToClear: "Ingen egendefinerte bilder å fjerne.",
       btnInstall: "Installer som app",
       btnReset: "Tilbakestill alle stiler",
       noMatches: "Ingen matchende datoer eller notater funnet.",
@@ -4007,6 +4030,51 @@
     delete monthPhotos[mk];
     settings.photoMode = 'monthly';
     updatePhotoUI(); save(); loadMonthPhoto();
+  });
+
+  document.getElementById('clearPrevYearPhotosBtn').addEventListener('click', () => {
+    const keys = Object.keys(monthPhotos || {});
+    if (!keys.length) {
+      alert(t('noPhotosToClear'));
+      return;
+    }
+    if (!confirm(t('confirmClearPrevYearPhotos'))) return;
+    const yearPrefix = String(new Date().getFullYear()) + '-';
+    let removed = 0;
+    keys.forEach(k => {
+      if (!String(k).startsWith(yearPrefix)) {
+        delete monthPhotos[k];
+        removed++;
+      }
+    });
+    if (!removed) {
+      alert(t('noPhotosToClear'));
+      return;
+    }
+    // If current month photo was removed (shouldn't be for current year), fall back
+    const mk = monthKey(current);
+    if (!monthPhotos[mk] && settings.photoMode === 'custom') {
+      settings.photoMode = 'monthly';
+    }
+    updatePhotoUI();
+    save();
+    loadMonthPhoto();
+    alert(t('clearedPrevYearPhotos'));
+  });
+
+  document.getElementById('clearAllPhotosBtn').addEventListener('click', () => {
+    const keys = Object.keys(monthPhotos || {});
+    if (!keys.length) {
+      alert(t('noPhotosToClear'));
+      return;
+    }
+    if (!confirm(t('confirmClearAllPhotos'))) return;
+    monthPhotos = {};
+    if (settings.photoMode === 'custom') settings.photoMode = 'monthly';
+    updatePhotoUI();
+    save();
+    loadMonthPhoto();
+    alert(t('clearedAllPhotos'));
   });
 
   /* PWA INSTALL BUTTON & STANDALONE CHECK FIX */
