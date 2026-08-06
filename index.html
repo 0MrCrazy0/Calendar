@@ -470,6 +470,23 @@
     color-scheme: dark;
   }
 
+  .time-preview-chip {
+    display: none;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent-text);
+    background: var(--accent);
+    padding: 7px 12px;
+    border-radius: 8px;
+    white-space: nowrap;
+    min-width: 5.5em;
+    text-align: center;
+    letter-spacing: 0.02em;
+  }
+  .time-preview-chip.visible {
+    display: inline-block;
+  }
+
   .note-form input:focus {
     border-color: var(--accent);
   }
@@ -1218,10 +1235,15 @@
         </div>
 
         <input type="text" id="noteText" placeholder="Add note or event…">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-          <input type="time" id="noteTime" title="Optional Event Time" style="flex:1;margin-bottom:0;">
-          <span id="noteTimePreview" style="font-size:12px;color:var(--accent);font-weight:600;white-space:nowrap;min-width:4.5em;"></span>
+        <div class="time-pick-row" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+          <input type="time" id="noteTime" title="Optional Event Time" style="flex:1;min-width:7em;margin-bottom:0;">
+          <span id="noteTimePreview" class="time-preview-chip" aria-live="polite"></span>
         </div>
+        <p id="noteTimeHint" style="font-size:10px;color:var(--muted);margin:-2px 0 8px;line-height:1.35;"></p>
+        <label class="mute-alarm-row" style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);margin-bottom:8px;cursor:pointer;">
+          <input type="checkbox" id="noteMuteAlarm" style="width:16px;height:16px;accent-color:var(--accent);">
+          <span data-i18n="muteAlarmLabel">Mute alarm for this event (notification only)</span>
+        </label>
 
         <div class="note-options">
           <input type="text" id="noteEmoji" placeholder="Emoji" maxlength="8" title="Paste one or multiple emojis">
@@ -1608,6 +1630,11 @@
       shareEvent: "Share event",
       shareEventDone: "Event ready to share",
       shareEventFallback: "Text copied · .ics downloaded",
+      muteAlarmLabel: "Mute alarm for this event (notification only)",
+      timeHint12: "Pick a time — your 12-hour time shows in the purple badge (browser field may look 24-hour).",
+      timeHint24: "Pick a time (24-hour).",
+      timeHint12Set: "Event time (12-hour):",
+      timeHint24Set: "Time set (24-hour).",
       updateEventBtn: "Update Event / Note",
       confirmClear: "Delete ALL marks, notes, recurring events, custom categories and photos? This cannot be undone.",
       cleared: "All data cleared.",
@@ -1716,6 +1743,11 @@
       shareEvent: "I-share ang event",
       shareEventDone: "Handa nang i-share",
       shareEventFallback: "Nakopya ang text · na-download ang .ics",
+      muteAlarmLabel: "I-mute ang alarm (notification lang)",
+      timeHint12: "Pumili ng oras — 12-oras na oras sa purple badge (maaaring 24-oras ang field).",
+      timeHint24: "Pumili ng oras (24-oras).",
+      timeHint12Set: "Oras ng event (12-oras):",
+      timeHint24Set: "Naitakda ang oras (24-oras).",
       updateEventBtn: "I-update ang Kaganapan / Tala",
       confirmClear: "Burahin ang LAHAT ng marka, tala, paulit-ulit na kaganapan, kategorya at larawan? Hindi na ito maibabalik.",
       cleared: "Nabura ang lahat ng datos.",
@@ -1824,6 +1856,11 @@
       shareEvent: "Del hendelse",
       shareEventDone: "Hendelse klar til deling",
       shareEventFallback: "Tekst kopiert · .ics lastet ned",
+      muteAlarmLabel: "Demp alarm for denne hendelsen (kun varsel)",
+      timeHint12: "Velg tid — 12-timers visning i lilla merke (feltet kan se 24-timers ut).",
+      timeHint24: "Velg tid (24-timers).",
+      timeHint12Set: "Hendelsestid (12-timers):",
+      timeHint24Set: "Tid satt (24-timers).",
       updateEventBtn: "Oppdater hendelse / notat",
       confirmClear: "Slette ALLE merker, notater, gjentakende hendelser, kategorier og bilder? Dette kan ikke angres.",
       cleared: "Alle data er slettet.",
@@ -2480,6 +2517,7 @@
       showAppNotification(title, body, {
         tag: nid,
         snooze: true,
+        playSound: !n.muteAlarm,
         accentColor: n.categoryColor || 'var(--accent)',
         data: { date: todayStr, id: n.id }
       });
@@ -2517,6 +2555,7 @@
         console.log('[Calendar] Firing ahead notification for:', title, body);
         showAppNotification(title, body, {
           tag: nid,
+          playSound: !n.muteAlarm,
           accentColor: n.categoryColor || 'var(--accent)',
           data: { date: dateStr, id: n.id }
         });
@@ -2811,7 +2850,7 @@
       li.className = `event-item ${n.completed ? 'completed' : ''}`;
       
       const formattedText = formatTextSpan(n.text, n.styles);
-      const formattedTime = n.time ? `<span class="event-time">${formatDisplayTime(n.time)}</span>` : '';
+      const formattedTime = n.time ? `<span class="event-time">${formatDisplayTime(n.time)}${n.muteAlarm ? ' 🔇' : ''}</span>` : '';
       
       let repeatLabel = '';
       if (n.repeat === 'daily') repeatLabel = `<div class="event-recurring">${t('repeatsDaily')}</div>`;
@@ -2829,7 +2868,7 @@
           ${repeatLabel}
         </div>
         <div class="event-actions" style="display:flex;gap:2px;align-items:center;">
-          <button class="share-event" data-id="${n.id}" title="${t('shareEvent')}" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 3px;">↗</button>
+          <button class="share-event" data-id="${n.id}" title="${t('shareEvent') || 'Share event'}" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 3px;">↗</button>
           <button class="edit-event" data-id="${n.id}" title="${t('editEvent')}" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:14px;padding:0 3px;">✏️</button>
           ${!isRecurring ? `<button class="dup-event" data-id="${n.id}" title="${t('dupNextWeek')}" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 3px;">📅+</button>` : ''}
           <button class="delete-event" data-id="${n.id}">×</button>
@@ -2901,9 +2940,8 @@
     });
   }
 
-  // Share one event: system share sheet (text + .ics when possible), else copy text + download .ics
   async function shareEvent(id, dateKey) {
-    const dateObj = parseLocalDate(dateKey) || selected;
+    const dateObj = (typeof parseLocalDate === 'function' && parseLocalDate(dateKey)) || selected;
     const dayNotes = getNotesForDate(dateObj);
     const n = dayNotes.find(x => x.id === id);
     if (!n) return;
@@ -2917,7 +2955,7 @@
 
     const icsEscape = (s) => String(s || '')
       .replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, ' ');
-    const cleanDate = dateKey.replace(/-/g, '');
+    const cleanDate = String(dateKey).replace(/-/g, '');
     const tzName = (Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC').replace(/[^a-zA-Z0-9/_+-]/g, '');
     let ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Simple Calendar//EN\r\nCALSCALE:GREGORIAN\r\n';
     ics += 'X-WR-TIMEZONE:' + tzName + '\r\nBEGIN:VEVENT\r\n';
@@ -2946,9 +2984,7 @@
       if (navigator.share) {
         const payload = { title: title, text: shareText };
         try {
-          if (navigator.canShare && navigator.canShare({ files: [icsFile] })) {
-            payload.files = [icsFile];
-          }
+          if (navigator.canShare && navigator.canShare({ files: [icsFile] })) payload.files = [icsFile];
         } catch (_) {}
         await navigator.share(payload);
         return;
@@ -2958,9 +2994,7 @@
     }
 
     try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(shareText);
-      }
+      if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(shareText);
     } catch (_) {}
     const url = URL.createObjectURL(icsBlob);
     const a = document.createElement('a');
@@ -2968,23 +3002,33 @@
     a.download = 'event.ics';
     a.click();
     URL.revokeObjectURL(url);
-    showInAppToast(t('shareEventDone'), t('shareEventFallback'), 'var(--accent)');
+    showInAppToast(t('shareEventDone') || 'Event ready to share', t('shareEventFallback') || 'Text copied · .ics downloaded', 'var(--accent)');
   }
 
   function updateNoteTimePreview() {
     const preview = document.getElementById('noteTimePreview');
+    const hint = document.getElementById('noteTimeHint');
     const timeEl = document.getElementById('noteTime');
     if (!preview || !timeEl) return;
     const val = timeEl.value;
+
+    // Native <input type="time"> always stores HH:mm (24h). The chip shows the app's preferred format.
     if (!val) {
       preview.textContent = '';
+      preview.classList.remove('visible');
+      if (hint) {
+        hint.textContent = settings.use24Hour
+          ? (t('timeHint24') || 'Pick a time (24-hour).')
+          : (t('timeHint12') || 'Pick a time — your 12-hour time shows in the purple badge (browser field may look 24-hour).');
+      }
       return;
     }
-    // Always show a clear 12h label when 24h mode is off (native picker UI is OS-dependent)
-    if (settings.use24Hour) {
-      preview.textContent = val;
-    } else {
-      preview.textContent = formatDisplayTime(val);
+    preview.textContent = formatDisplayTime(val);
+    preview.classList.add('visible');
+    if (hint) {
+      hint.textContent = settings.use24Hour
+        ? (t('timeHint24Set') || 'Time set (24-hour).')
+        : (t('timeHint12Set') || 'This event will use: ' + formatDisplayTime(val));
     }
   }
 
@@ -2994,6 +3038,8 @@
     document.getElementById('noteEmoji').value = '';
     document.getElementById('noteRepeat').value = 'none';
     document.getElementById('eventCategory').value = '#fdcb6e';
+    const muteEl = document.getElementById('noteMuteAlarm');
+    if (muteEl) muteEl.checked = false;
     activeStyles = { bold: false, italic: false, strike: false };
     document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
     editingId = null;
@@ -3015,6 +3061,8 @@
     document.getElementById('noteEmoji').value = note.emoji || '';
     document.getElementById('noteRepeat').value = note.repeat || 'none';
     document.getElementById('eventCategory').value = categorySelectValue(note);
+    const muteEl = document.getElementById('noteMuteAlarm');
+    if (muteEl) muteEl.checked = !!note.muteAlarm;
 
     activeStyles = { bold: !!note.styles?.bold, italic: !!note.styles?.italic, strike: !!note.styles?.strike };
     document.getElementById('btnBold').classList.toggle('active', activeStyles.bold);
@@ -3043,7 +3091,9 @@
       time: note.time,
       emoji: note.emoji,
       categoryColor: note.categoryColor,
+      categoryId: note.categoryId,
       styles: note.styles ? { ...note.styles } : {},
+      muteAlarm: !!note.muteAlarm,
       completed: false
     });
     save();
@@ -3291,6 +3341,7 @@
     const time = document.getElementById('noteTime').value;
     const emoji = document.getElementById('noteEmoji').value.trim();
     const { categoryColor, categoryId } = resolveCategory(document.getElementById('eventCategory').value);
+    const muteAlarm = !!(document.getElementById('noteMuteAlarm') || {}).checked;
 
     const repeatVal = document.getElementById('noteRepeat').value;
     const styles = { ...activeStyles };
@@ -3311,6 +3362,7 @@
         note.categoryColor = categoryColor;
         note.categoryId = categoryId || undefined;
         note.styles = styles;
+        note.muteAlarm = muteAlarm;
         if (isRec) {
           note.repeat = repeatVal;
           if (repeatVal === 'none') {
@@ -3320,7 +3372,7 @@
             if (!notes[k]) notes[k] = [];
             notes[k].push({
               id: editingId, text, time, emoji, categoryColor, categoryId: categoryId || undefined,
-              styles, completed: wasCompletedToday
+              styles, muteAlarm, completed: wasCompletedToday
             });
           }
         } else if (repeatVal !== 'none') {
@@ -3331,7 +3383,7 @@
           if (note.completed) completedDates[k] = true;
           recurring.push({
             id: editingId, text, time, emoji, categoryColor, categoryId: categoryId || undefined,
-            styles, completedDates,
+            styles, muteAlarm, completedDates,
             repeat: repeatVal,
             startDate: key(selected),
             month: selected.getMonth()+1,
@@ -3346,7 +3398,7 @@
       if (repeatVal !== 'none') {
         recurring.push({
           id, text, time, emoji, categoryColor, categoryId: categoryId || undefined,
-          styles, completedDates: {},
+          styles, muteAlarm, completedDates: {},
           repeat: repeatVal,
           startDate: key(selected),
           month: selected.getMonth()+1,
@@ -3357,7 +3409,7 @@
         if (!notes[k]) notes[k] = [];
         notes[k].push({
           id, text, time, emoji, categoryColor, categoryId: categoryId || undefined,
-          styles, completed: false
+          styles, muteAlarm, completed: false
         });
       }
     }
