@@ -1109,7 +1109,7 @@
     .day-badge { background: #333 !important; color: #fff !important; }
     /* Hide the selected-day panel list — full month list is used instead */
     .day-panel { display: none !important; }
-    .event-actions, .delete-event, .edit-event, .dup-event { display: none !important; }
+    .event-actions, .delete-event, .edit-event, .dup-event, .share-event { display: none !important; }
     #printMonthEvents {
       display: block !important;
       margin: 16px 10px 8px;
@@ -1605,6 +1605,9 @@
       btnIcs: "📅 Export to .ics (iCal)",
       btnClearAll: "🗑️ Clear All Data",
       editEvent: "Edit",
+      shareEvent: "Share event",
+      shareEventDone: "Event ready to share",
+      shareEventFallback: "Text copied · .ics downloaded",
       updateEventBtn: "Update Event / Note",
       confirmClear: "Delete ALL marks, notes, recurring events, custom categories and photos? This cannot be undone.",
       cleared: "All data cleared.",
@@ -1710,6 +1713,9 @@
       btnIcs: "📅 I-export sa .ics (iCal)",
       btnClearAll: "🗑️ Burahin ang Lahat ng Datos",
       editEvent: "I-edit",
+      shareEvent: "I-share ang event",
+      shareEventDone: "Handa nang i-share",
+      shareEventFallback: "Nakopya ang text · na-download ang .ics",
       updateEventBtn: "I-update ang Kaganapan / Tala",
       confirmClear: "Burahin ang LAHAT ng marka, tala, paulit-ulit na kaganapan, kategorya at larawan? Hindi na ito maibabalik.",
       cleared: "Nabura ang lahat ng datos.",
@@ -1815,6 +1821,9 @@
       btnIcs: "📅 Eksporter til .ics (iCal)",
       btnClearAll: "🗑️ Slett alle data",
       editEvent: "Rediger",
+      shareEvent: "Del hendelse",
+      shareEventDone: "Hendelse klar til deling",
+      shareEventFallback: "Tekst kopiert · .ics lastet ned",
       updateEventBtn: "Oppdater hendelse / notat",
       confirmClear: "Slette ALLE merker, notater, gjentakende hendelser, kategorier og bilder? Dette kan ikke angres.",
       cleared: "Alle data er slettet.",
@@ -1962,6 +1971,12 @@
   }
 
   function key(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+  function parseLocalDate(dateStr) {
+    if (!dateStr || typeof dateStr !== 'string') return null;
+    const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return null;
+    return new Date(+m[1], +m[2] - 1, +m[3]);
+  }
   function monthKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
   function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
@@ -2814,6 +2829,7 @@
           ${repeatLabel}
         </div>
         <div class="event-actions" style="display:flex;gap:2px;align-items:center;">
+          <button class="share-event" data-id="${n.id}" title="${t('shareEvent')}" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 3px;">↗</button>
           <button class="edit-event" data-id="${n.id}" title="${t('editEvent')}" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:14px;padding:0 3px;">✏️</button>
           ${!isRecurring ? `<button class="dup-event" data-id="${n.id}" title="${t('dupNextWeek')}" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 3px;">📅+</button>` : ''}
           <button class="delete-event" data-id="${n.id}">×</button>
@@ -2876,6 +2892,83 @@
         render();
       });
     });
+
+    list.querySelectorAll('.share-event').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        shareEvent(btn.dataset.id, k);
+      });
+    });
+  }
+
+  // Share one event: system share sheet (text + .ics when possible), else copy text + download .ics
+  async function shareEvent(id, dateKey) {
+    const dateObj = parseLocalDate(dateKey) || selected;
+    const dayNotes = getNotesForDate(dateObj);
+    const n = dayNotes.find(x => x.id === id);
+    if (!n) return;
+
+    const dateLabel = dateObj.toLocaleDateString(undefined, {
+      weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+    });
+    const timeLabel = n.time ? formatDisplayTime(n.time) : '';
+    const title = ((n.emoji ? n.emoji + ' ' : '') + (n.text || 'Event')).replace(/<[^>]+>/g, '').trim();
+    const shareText = [title, dateLabel + (timeLabel ? ' · ' + timeLabel : '')].filter(Boolean).join('\n');
+
+    const icsEscape = (s) => String(s || '')
+      .replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, ' ');
+    const cleanDate = dateKey.replace(/-/g, '');
+    const tzName = (Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC').replace(/[^a-zA-Z0-9/_+-]/g, '');
+    let ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Simple Calendar//EN\r\nCALSCALE:GREGORIAN\r\n';
+    ics += 'X-WR-TIMEZONE:' + tzName + '\r\nBEGIN:VEVENT\r\n';
+    ics += 'UID:' + (n.id || uid()) + '@simplecalendar\r\n';
+    ics += 'SUMMARY:' + icsEscape(title) + '\r\n';
+    if (n.time) {
+      const t = n.time.replace(':', '') + '00';
+      ics += 'DTSTART;TZID=' + tzName + ':' + cleanDate + 'T' + t + '\r\n';
+      const parts = n.time.split(':').map(Number);
+      const end = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), parts[0], parts[1] || 0);
+      end.setHours(end.getHours() + 1);
+      const ed = end.getFullYear() + String(end.getMonth() + 1).padStart(2, '0') + String(end.getDate()).padStart(2, '0');
+      const et = String(end.getHours()).padStart(2, '0') + String(end.getMinutes()).padStart(2, '0') + '00';
+      ics += 'DTEND;TZID=' + tzName + ':' + ed + 'T' + et + '\r\n';
+    } else {
+      ics += 'DTSTART;VALUE=DATE:' + cleanDate + '\r\n';
+      const next = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate() + 1);
+      const nd = next.getFullYear() + String(next.getMonth() + 1).padStart(2, '0') + String(next.getDate()).padStart(2, '0');
+      ics += 'DTEND;VALUE=DATE:' + nd + '\r\n';
+    }
+    ics += 'END:VEVENT\r\nEND:VCALENDAR';
+    const icsBlob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const icsFile = new File([icsBlob], 'event.ics', { type: 'text/calendar' });
+
+    try {
+      if (navigator.share) {
+        const payload = { title: title, text: shareText };
+        try {
+          if (navigator.canShare && navigator.canShare({ files: [icsFile] })) {
+            payload.files = [icsFile];
+          }
+        } catch (_) {}
+        await navigator.share(payload);
+        return;
+      }
+    } catch (err) {
+      if (err && err.name === 'AbortError') return;
+    }
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(shareText);
+      }
+    } catch (_) {}
+    const url = URL.createObjectURL(icsBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'event.ics';
+    a.click();
+    URL.revokeObjectURL(url);
+    showInAppToast(t('shareEventDone'), t('shareEventFallback'), 'var(--accent)');
   }
 
   function updateNoteTimePreview() {
